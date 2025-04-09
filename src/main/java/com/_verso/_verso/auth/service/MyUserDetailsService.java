@@ -16,9 +16,10 @@ public class MyUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String input) throws UsernameNotFoundException {
+        System.out.println("BUSCANDO USUARIO!!!!!!!");
         return userRepo
                 .findByEmailOrUsername(input, input)
-                .map(UserDetailsImpl::new) // or your adapter class
+                .map(UserDetailsImpl::new)
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found with email or username: " + input));
     }

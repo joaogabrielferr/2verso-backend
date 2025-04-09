@@ -1,16 +1,20 @@
 package com._verso._verso.auth.controller;
 
 import com._verso._verso.auth.DTOs.LoginDTO;
+import com._verso._verso.auth.DTOs.LoginResponseDTO;
 import com._verso._verso.auth.DTOs.RegisterDTO;
 import com._verso._verso.auth.jwt.TokenService;
 import com._verso._verso.auth.model.User;
 import com._verso._verso.auth.repository.UserRepository;
+import com._verso._verso.auth.security.UserDetailsImpl;
 import jakarta.validation.Valid;
+import org.antlr.v4.runtime.Token;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,30 +23,45 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("auth")
+@RequestMapping("/api/auth")
 public class AuthenticationController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final TokenService tokenService;
 
-    @Autowired
-    private TokenService tokenService;
+    public AuthenticationController(
+            AuthenticationManager authenticationManager,
+            UserRepository userRepository,
+            TokenService tokenService
+    ) {
+        this.authenticationManager = authenticationManager;
+        this.userRepository = userRepository;
+        this.tokenService = tokenService;
+    }
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody @Valid LoginDTO data){
-        var userNamePassword = new UsernamePasswordAuthenticationToken(data.login(),data.password());
-        var auth = this.authenticationManager.authenticate(userNamePassword);
 
-        return ResponseEntity.ok().build();
+        try{
+            var userNamePassword = new UsernamePasswordAuthenticationToken(data.login(),data.password());
+            var auth = this.authenticationManager.authenticate(userNamePassword);
+            var userDetailsImpl = (UserDetailsImpl)auth.getPrincipal();
+            var jwtToken = this.tokenService.generateToken(userDetailsImpl.getUser());
+            return ResponseEntity.ok(new LoginResponseDTO(jwtToken));
+        }catch(AuthenticationException ex){
+            // Log it, return error
+            System.out.println("Authentication failed: " + ex.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        }
+
     }
 
     @PostMapping("/register")
     public ResponseEntity register(@RequestBody @Valid RegisterDTO data){
 
-        if(this.userRepository.findByEmailOrUsername(data.email(), data.username()) != null){
+        if(this.userRepository.findByEmailOrUsername(data.email(), data.username()).isPresent()){
             return ResponseEntity.status(HttpStatus.CONFLICT).body("User already exists");
         }
 
@@ -52,9 +71,8 @@ public class AuthenticationController {
 
         this.userRepository.save(user);
 
-        String jwt = tokenService.generateToken(user);
 
-        return ResponseEntity.ok(jwt);
+        return ResponseEntity.ok().build();
 
     }
 

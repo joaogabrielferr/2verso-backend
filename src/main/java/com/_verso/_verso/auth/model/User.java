@@ -7,15 +7,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users",schema = "twoverso")
 public class User extends BaseEntity{
 
-    @Id
-    private UUID id;
     private String username;
     private String email;
     private String password;
 
+    public User() {}
 
     public User(String username, String email, String password) {
         this.username = username;
