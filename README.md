@@ -1,10 +1,10 @@
-# 2verso-backend
+# writing app - backend
 
-🚀 RoadMap
+RoadMap
 
 ### User Authentication
 
-Signup/Login with email & password
+Signup/Login with email & password (OK)
 Login with Google
 
 Password recovery/reset
@@ -13,11 +13,11 @@ Basic profile setup (username, bio, profile picture)
 
 ### Article Creation & Management
 
-Rich text editor for writing articles
+CRUD (ok)
 
 Ability to upload images
 
-Save drafts & publish articles
+Save drafts
 
 ### Article Discovery & Reading
 
