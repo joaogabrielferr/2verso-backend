@@ -1,15 +1,16 @@
 package com._verso._verso.auth.model;
 
-import com._verso._verso.common.classes.BaseEntity;
 import jakarta.persistence.*;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "users",schema = "twoverso")
-public class User extends BaseEntity{
+public class User{
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
     private String username;
     private String email;
     private String password;

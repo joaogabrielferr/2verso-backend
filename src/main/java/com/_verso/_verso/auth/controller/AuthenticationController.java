@@ -7,6 +7,8 @@ import com._verso._verso.auth.jwt.TokenService;
 import com._verso._verso.auth.model.User;
 import com._verso._verso.auth.repository.UserRepository;
 import com._verso._verso.auth.security.UserDetailsImpl;
+import com._verso._verso.common.ErrorAssetEnum;
+import com._verso._verso.common.ErrorMessage;
 import jakarta.validation.Valid;
 import org.antlr.v4.runtime.Token;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +44,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody @Valid LoginDTO data){
+    public ResponseEntity<?> login(@RequestBody @Valid LoginDTO data){
 
         try{
             var userNamePassword = new UsernamePasswordAuthenticationToken(data.login(),data.password());
@@ -53,16 +55,16 @@ public class AuthenticationController {
         }catch(AuthenticationException ex){
             // Log it, return error
             System.out.println("Authentication failed: " + ex.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorMessage("Invalid credentials",ErrorAssetEnum.AUTHENTICATION));
         }
 
     }
 
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody @Valid RegisterDTO data){
+    public ResponseEntity<?> register(@RequestBody @Valid RegisterDTO data){
 
         if(this.userRepository.findByEmailOrUsername(data.email(), data.username()).isPresent()){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("User already exists");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorMessage("There is already an user with that email.", ErrorAssetEnum.AUTHENTICATION));
         }
 
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
