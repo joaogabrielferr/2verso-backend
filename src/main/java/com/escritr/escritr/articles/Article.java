@@ -25,10 +25,13 @@ public class Article{
     private String thumbnailUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private String slug;
+
     public Article() {
     }
 
-    public Article(User author, String title, String subtitle, String content, String firstParagraph, String thumbNailUrl, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Article(User author, String title, String subtitle, String content, String firstParagraph, String thumbNailUrl, LocalDateTime createdAt, LocalDateTime updatedAt,String slug) {
         this.author = author;
         this.title = title;
         this.subtitle = subtitle;
@@ -37,6 +40,7 @@ public class Article{
         this.thumbnailUrl = thumbNailUrl;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.slug = slug;
     }
 
     @PrePersist
@@ -121,6 +125,14 @@ public class Article{
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
     }
 
     @Override

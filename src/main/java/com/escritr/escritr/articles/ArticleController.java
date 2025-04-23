@@ -76,6 +76,13 @@ public class ArticleController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<ArticleResponseDTO> findBySlug(@PathVariable String slug){
+
+        ArticleResponseDTO article = this.articleService.findBySlug(slug);
+        return ResponseEntity.ok(article);
+    }
+
 
 
 

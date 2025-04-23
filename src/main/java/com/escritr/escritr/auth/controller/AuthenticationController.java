@@ -1,5 +1,6 @@
 package com.escritr.escritr.auth.controller;
 
+import com.escritr.escritr.articles.Article;
 import com.escritr.escritr.auth.DTOs.LoginDTO;
 import com.escritr.escritr.auth.DTOs.LoginResponseDTO;
 import com.escritr.escritr.auth.DTOs.RegisterDTO;
@@ -16,10 +17,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -75,5 +73,7 @@ public class AuthenticationController {
         return ResponseEntity.ok().build();
 
     }
+
+
 
 }

@@ -10,6 +10,7 @@ public record ArticleResponseDTO(
         String content,
         String firstParagraph,
         String thumbnailUrl,
+        String slug,
         String createdAt,
         String updatedAt,
         AuthorResponseDTO author) { }

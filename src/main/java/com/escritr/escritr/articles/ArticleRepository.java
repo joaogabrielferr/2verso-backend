@@ -8,6 +8,7 @@ import org.springframework.lang.NonNullApi;
 import org.springframework.stereotype.Repository;
 
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -22,6 +23,8 @@ public interface ArticleRepository extends JpaRepository<Article, UUID>{
 //    Page<Article> findRecentArticles(Pageable pageable);
 
     Page<Article> findByAuthorUsername(String username, Pageable pageable);
+
+    Optional<Article> findBySlug(String slug);
 
 
 
