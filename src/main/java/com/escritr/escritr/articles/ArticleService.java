@@ -11,6 +11,10 @@ import com.escritr.escritr.exceptions.InternalServerErrorException;
 import com.escritr.escritr.exceptions.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -50,7 +54,6 @@ public class ArticleService {
 
         article.setAuthor(author);
 
-        //TODO: extract first paragraph from content
         article.setFirstParagraph(HtmlParser.extractFirstParagraph(article.getContent()));
 
 
@@ -60,24 +63,24 @@ public class ArticleService {
 
 
 
-    public ArrayList<ArticleResponseDTO> list(){
+    public Page<ArticleResponseDTO> list(int page, int size){
 
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Article> articles =  this.articleRepository.findAll(pageable);
 
-        ArrayList<Article> articles = (ArrayList<Article>) this.articleRepository.findAll();
-
-        ArrayList<ArticleResponseDTO> DTOs = new ArrayList<>();
-
-        articles.forEach(a -> {
-            DTOs.add(articleMapper.articleToResponseDTO(a));
-        });
-
-        return DTOs;
+        return articles.map(articleMapper::articleToResponseDTO);
     }
 
     public ArticleResponseDTO find(UUID id){
 
         Article article = this.articleRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("no article with id:" + id));
         return articleMapper.articleToResponseDTO(article);
+    }
+
+    public Page<ArticleResponseDTO> getArticlesByUsername(String username, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Article> articles = articleRepository.findByAuthorUsername(username, pageable);
+        return articles.map(articleMapper::articleToResponseDTO);
     }
 
     public ArticleResponseDTO update(UUID id, @Valid ArticlePostDTO dto){

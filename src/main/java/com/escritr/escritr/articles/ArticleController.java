@@ -2,6 +2,7 @@ package com.escritr.escritr.articles;
 
 import com.escritr.escritr.articles.DTOs.ArticlePostDTO;
 import com.escritr.escritr.articles.DTOs.ArticleResponseDTO;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -36,8 +37,11 @@ public class ArticleController {
     }
 
     @GetMapping()
-    public ResponseEntity<ArrayList<ArticleResponseDTO>> list(){
-        ArrayList<ArticleResponseDTO> articles = articleService.list();
+    public ResponseEntity<Page<ArticleResponseDTO>> list(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        Page<ArticleResponseDTO> articles = articleService.list(page,size);
         return ResponseEntity.ok(articles);
     }
     @GetMapping("/{id}")
@@ -47,6 +51,16 @@ public class ArticleController {
         return ResponseEntity.ok(article);
 
     }
+
+    @GetMapping("/user/{username}")
+    public ResponseEntity<Page<ArticleResponseDTO>> findArticlesOfUser(
+            @PathVariable String username,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size){
+        Page<ArticleResponseDTO> articles = articleService.getArticlesByUsername(username,page,size);
+        return ResponseEntity.ok(articles);
+    }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<ArticleResponseDTO> update(@PathVariable UUID id, @RequestBody ArticlePostDTO dto){

@@ -1,5 +1,6 @@
 package com.escritr.escritr.auth.jwt;
 
+import com.escritr.escritr.auth.DTOs.DecodedToken;
 import com.escritr.escritr.auth.model.User;
 import com.escritr.escritr.auth.repository.UserRepository;
 import com.escritr.escritr.auth.security.UserDetailsImpl;
@@ -15,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -29,18 +31,37 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         var token = this.getToken(request);
         if(token != null){
-            var login = tokenService.validateToken(token);
-            Optional<User> user = userRepository.findByEmailOrUsername(login,login);
-            if(user.isPresent()){
-                System.out.println(user.get().getEmail());
-                System.out.println(user.get().getUsername());
-            }else{
-                System.out.println("nao achou, login:" + login);
+//            var login = tokenService.validateToken(token);
+//            Optional<User> user = userRepository.findByEmailOrUsername(login,login);
+//            if(user.isPresent()){
+//                System.out.println(user.get().getEmail());
+//                System.out.println(user.get().getUsername());
+//            }else{
+//                System.out.println("nao achou, login:" + login);
+//            }
+//            UserDetailsImpl userDetails = new UserDetailsImpl(user.orElseThrow());
+//            var authentication = new UsernamePasswordAuthenticationToken(userDetails,null,userDetails.getAuthorities());
+//            SecurityContextHolder.getContext().setAuthentication(authentication);
+//            System.out.println("Auth set in context: " + SecurityContextHolder.getContext().getAuthentication());
+
+            DecodedToken decodedJWT = tokenService.decodeToken(token);
+            System.out.print(decodedJWT.userId());
+            if (decodedJWT != null) {
+                Optional<User> user = userRepository.findByEmailOrUsername(decodedJWT.email(), decodedJWT.username());
+                System.out.println("got the user:" + user.get().getUsername());
+                if (user.isPresent() && user.get().getTokenVersion() == decodedJWT.tokenVersion()) {
+                    UserDetailsImpl userDetails = new UserDetailsImpl(user.get());
+                    System.out.println(userDetails.getId() + "," + userDetails.getUser().getId());
+                    var auth = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
+
+                    System.out.println("aqui");
+
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             }
-            UserDetailsImpl userDetails = new UserDetailsImpl(user.orElseThrow());
-            var authentication = new UsernamePasswordAuthenticationToken(userDetails,null,userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            System.out.println("Auth set in context: " + SecurityContextHolder.getContext().getAuthentication());
+
         }
         filterChain.doFilter(request,response);
     }

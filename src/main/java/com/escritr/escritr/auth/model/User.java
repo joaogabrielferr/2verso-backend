@@ -15,6 +15,9 @@ public class User{
     private String email;
     private String password;
 
+    @Column(nullable = false)
+    private int tokenVersion = 0;
+
     public User() {}
 
     public User(String username, String email, String password) {
@@ -53,5 +56,17 @@ public class User{
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public int getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void setTokenVersion(int tokenVersion) {
+        this.tokenVersion = tokenVersion;
+    }
+
+    public void incrementTokenVersion() {
+        this.tokenVersion++;
     }
 }

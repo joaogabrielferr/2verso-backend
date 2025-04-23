@@ -99,12 +99,12 @@ public class Article{
         this.firstParagraph = firstParagraph;
     }
 
-    public String getThumbNailUrl() {
+    public String getThumbnailUrl() {
         return thumbnailUrl;
     }
 
-    public void setThumbNailUrl(String thumbNailUrl) {
-        this.thumbnailUrl = thumbNailUrl;
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -127,11 +127,11 @@ public class Article{
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Article article)) return false;
-        return Objects.equals(getAuthor(), article.getAuthor()) && Objects.equals(getTitle(), article.getTitle()) && Objects.equals(getSubtitle(), article.getSubtitle()) && Objects.equals(getContent(), article.getContent()) && Objects.equals(getFirstParagraph(), article.getFirstParagraph()) && Objects.equals(getThumbNailUrl(), article.getThumbNailUrl()) && Objects.equals(getCreatedAt(), article.getCreatedAt()) && Objects.equals(getUpdatedAt(), article.getUpdatedAt());
+        return Objects.equals(getAuthor(), article.getAuthor()) && Objects.equals(getTitle(), article.getTitle()) && Objects.equals(getSubtitle(), article.getSubtitle()) && Objects.equals(getContent(), article.getContent()) && Objects.equals(getFirstParagraph(), article.getFirstParagraph()) && Objects.equals(getThumbnailUrl(), article.getThumbnailUrl()) && Objects.equals(getCreatedAt(), article.getCreatedAt()) && Objects.equals(getUpdatedAt(), article.getUpdatedAt());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getAuthor(), getTitle(), getSubtitle(), getContent(), getFirstParagraph(), getThumbNailUrl(), getCreatedAt(), getUpdatedAt());
+        return Objects.hash(getAuthor(), getTitle(), getSubtitle(), getContent(), getFirstParagraph(), getThumbnailUrl(), getCreatedAt(), getUpdatedAt());
     }
 }
