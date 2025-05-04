@@ -1,4 +1,4 @@
-package com.escritr.escritr.auth.model;
+package com.escritr.escritr.auth;
 
 import jakarta.persistence.*;
 

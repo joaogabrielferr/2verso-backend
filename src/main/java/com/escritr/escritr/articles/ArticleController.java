@@ -3,6 +3,7 @@ package com.escritr.escritr.articles;
 import com.escritr.escritr.articles.DTOs.ArticlePostDTO;
 import com.escritr.escritr.articles.DTOs.ArticleResponseDTO;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;

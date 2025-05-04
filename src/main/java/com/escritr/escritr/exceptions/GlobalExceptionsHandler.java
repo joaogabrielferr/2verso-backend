@@ -1,5 +1,8 @@
 package com.escritr.escritr.exceptions;
 
+import com.escritr.escritr.common.ErrorAssetEnum;
+import com.escritr.escritr.common.ErrorCodeEnum;
+import com.escritr.escritr.common.ErrorMessage;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -68,9 +71,12 @@ public class GlobalExceptionsHandler {
         ));
     }
 
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Internal server error"));
     }
+
+
 }

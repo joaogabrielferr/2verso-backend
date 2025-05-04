@@ -3,14 +3,12 @@ package com.escritr.escritr.articles;
 import com.escritr.escritr.articles.DTOs.ArticlePostDTO;
 import com.escritr.escritr.articles.DTOs.ArticleResponseDTO;
 import com.escritr.escritr.articles.mappers.ArticleMapper;
-import com.escritr.escritr.auth.model.User;
-import com.escritr.escritr.auth.repository.UserRepository;
+import com.escritr.escritr.auth.User;
+import com.escritr.escritr.auth.UserRepository;
 import com.escritr.escritr.common.HtmlParser;
-import com.escritr.escritr.exceptions.BadRequestException;
 import com.escritr.escritr.exceptions.InternalServerErrorException;
 import com.escritr.escritr.exceptions.ResourceNotFoundException;
 import jakarta.validation.Valid;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -145,7 +142,7 @@ public class ArticleService {
         slug = CONSECUTIVE_HYPHENS.matcher(slug).replaceAll("-"); // Replace multiple hyphens
         slug = EDGES_HYPHEN.matcher(slug).replaceAll(""); // Trim leading/trailing hyphens
         //Truncate slug if too long
-         int maxLength = 240; // keep room for uuid
+         int maxLength = 240;
          if (slug.length() > maxLength) {
              slug = slug.substring(0, maxLength);
              // Ensure it doesn't end mid-word or with hyphen if possible
@@ -156,17 +153,6 @@ public class ArticleService {
 
     }
 
-    /**
-     * Ensures the generated slug is unique in the database.
-     * If the initial slug exists, it appends "-1", "-2", etc.,
-     * up to a maximum number of attempts.
-     *
-     * @param baseSlug The desired base slug (e.g., generated from the title).
-     * @param articleIdToExclude The ID of the article being updated (null if creating a new article),
-     *                           to allow its own slug.
-     * @return A unique slug.
-     * @throws IllegalStateException if a unique slug cannot be found within MAX_SLUG_ATTEMPTS.
-     */
     private String ensureUniqueSlug(String baseSlug, UUID articleIdToExclude) {
         String candidateSlug = baseSlug;
 
@@ -185,10 +171,7 @@ public class ArticleService {
         }
 
         log.warn("Could not generate a unique slug for base '{}' after {} attempts.", baseSlug, MAX_SLUG_ATTEMPTS);
-//        throw new IllegalStateException("Could not generate a unique slug for: " + baseSlug);
-        // Alternatively, you could generate a slug with a random suffix here as a fallback,
-        // but throwing an exception signals a potential problem (e.g., too many similar titles).
-        // Example Fallback: return baseSlug + "-" + UUID.randomUUID().toString().substring(0, 8);
+        // generate a slug with a random suffix here as a fallback,
         return baseSlug + "-" + UUID.randomUUID().toString().substring(0,8);
     }
 

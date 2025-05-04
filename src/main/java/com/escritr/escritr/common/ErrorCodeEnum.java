@@ -1,0 +1,11 @@
+package com.escritr.escritr.common;
+
+public enum ErrorCodeEnum {
+    TOKEN_EXPIRED,
+    INVALID_CREDENTIALS,
+    NO_REFRESH_TOKEN,
+    INVALID_REFRESH_TOKEN,
+    SESSION_INVALIDATED,
+    USER_ALREADY_EXISTS,
+    INTERNAL_SERVER_ERROR
+}
