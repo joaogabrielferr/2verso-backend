@@ -1,4 +1,4 @@
-package com.escritr.escritr.auth.DTOs;
+package com.escritr.escritr.auth.controller.DTOs;
 
 import java.util.UUID;
 

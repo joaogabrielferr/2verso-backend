@@ -1,6 +1,7 @@
-package com.escritr.escritr.auth.refresh_token;
+package com.escritr.escritr.auth.repository;
 
-import com.escritr.escritr.auth.User;
+import com.escritr.escritr.auth.model.RefreshToken;
+import com.escritr.escritr.user.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;

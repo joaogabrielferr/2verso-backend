@@ -1,6 +1,7 @@
-package com.escritr.escritr.auth;
+package com.escritr.escritr.user.service;
 
-import com.escritr.escritr.auth.security.UserDetailsImpl;
+import com.escritr.escritr.auth.model.UserDetailsImpl;
+import com.escritr.escritr.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

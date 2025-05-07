@@ -1,6 +1,6 @@
 package com.escritr.escritr.articles;
 
-import com.escritr.escritr.auth.User;
+import com.escritr.escritr.user.domain.User;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;

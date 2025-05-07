@@ -1,6 +1,6 @@
-package com.escritr.escritr.auth.security;
+package com.escritr.escritr.auth.model;
 
-import com.escritr.escritr.auth.User;
+import com.escritr.escritr.user.domain.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 

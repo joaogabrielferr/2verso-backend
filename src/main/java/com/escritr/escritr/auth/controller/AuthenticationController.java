@@ -1,15 +1,20 @@
-package com.escritr.escritr.auth;
+package com.escritr.escritr.auth.controller;
 
-import com.escritr.escritr.auth.DTOs.LoginDTO;
-import com.escritr.escritr.auth.DTOs.LoginResponseDTO;
-import com.escritr.escritr.auth.DTOs.RegisterDTO;
-import com.escritr.escritr.auth.jwt.TokenService;
-import com.escritr.escritr.auth.refresh_token.RefreshToken;
-import com.escritr.escritr.auth.refresh_token.RefreshTokenRepository;
-import com.escritr.escritr.auth.security.UserDetailsImpl;
+import com.escritr.escritr.auth.controller.DTOs.AuthenticationResult;
+import com.escritr.escritr.auth.controller.DTOs.LoginDTO;
+import com.escritr.escritr.auth.controller.DTOs.LoginResponseDTO;
+import com.escritr.escritr.auth.controller.DTOs.RegisterDTO;
+import com.escritr.escritr.auth.service.AuthenticationService;
+import com.escritr.escritr.auth.service.TokenService;
+import com.escritr.escritr.auth.model.RefreshToken;
+import com.escritr.escritr.auth.repository.RefreshTokenRepository;
 import com.escritr.escritr.common.ErrorAssetEnum;
 import com.escritr.escritr.common.ErrorCodeEnum;
 import com.escritr.escritr.common.ErrorMessage;
+import com.escritr.escritr.exceptions.InvalidRefreshTokenException;
+import com.escritr.escritr.exceptions.SessionInvalidatedException;
+import com.escritr.escritr.user.domain.User;
+import com.escritr.escritr.user.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,10 +24,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.WebUtils;
@@ -34,10 +35,9 @@ import java.util.Optional;
 @RequestMapping("/api/auth")
 public class AuthenticationController {
 
-    private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final TokenService tokenService;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final AuthenticationService authenticationService;
 
     // Read cookie properties from application.properties/yml for flexibility
     @Value("${api.security.token.refresh-cookie-name:refreshToken}")
@@ -60,59 +60,38 @@ public class AuthenticationController {
 
 
     public AuthenticationController(
-            AuthenticationManager authenticationManager,
             UserRepository userRepository,
             TokenService tokenService,
-            RefreshTokenRepository refreshTokenRepository // Add RefreshTokenRepository
+            AuthenticationService authenticationService
     ) {
-        this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
-        this.refreshTokenRepository = refreshTokenRepository; // Initialize
+        this.authenticationService = authenticationService;
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid LoginDTO data, HttpServletResponse response) {
 
-        try {
-            var userNamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.password());
-            Authentication auth = this.authenticationManager.authenticate(userNamePassword);
-            UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
-            User user = userDetails.getUser();
 
-            String accessToken = this.tokenService.generateAccessToken(user);
+            AuthenticationResult authResult = this.authenticationService.authenticateAndGenerateTokens(data);
 
-            RefreshToken refreshToken = this.tokenService.createRefreshToken(user);
-
-            // Create HttpOnly Cookie for Refresh Token
-            ResponseCookie refreshTokenCookie = ResponseCookie.from(refreshTokenCookieName, refreshToken.getToken())
+        // Create HttpOnly Cookie for Refresh Token
+            ResponseCookie refreshTokenCookie = ResponseCookie.from(refreshTokenCookieName, authResult.refreshTokenValue())
                     .httpOnly(cookieHttpOnly)
                     .secure(cookieSecure) // Should be true in production (HTTPS)
-                    .path(cookiePath) // Important: restrict path!
+                    .path(cookiePath) // Important: restrict path!!
                     .maxAge(refreshTokenExpirationDays * 24 * 60 * 60) // Max age in seconds
                     .sameSite(cookieSameSite) // "Strict" or "Lax"
                     .build();
 
-            // Return Access Token in Body, Refresh Token in Cookie
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                    .body(new LoginResponseDTO(accessToken));
-
-        } catch (AuthenticationException ex) {
-            System.err.println("Authentication failed: " + ex.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorMessage("Invalid credentials", ErrorAssetEnum.AUTHENTICATION, ErrorCodeEnum.INVALID_CREDENTIALS));
-        } catch (Exception ex) {
-            // Catch other potential errors during token generation/cookie creation
-            System.err.println("Login error: " + ex.getMessage());
-            //TODO: replace with more robust logging
-            ex.printStackTrace(); // Log stack trace for debugging
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorMessage("Login failed due to an internal error.", ErrorAssetEnum.AUTHENTICATION,null));
-        }
+                    .body(new LoginResponseDTO(authResult.accessToken()));
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        // 1. Extract refresh token from HttpOnly cookie
+
         Cookie cookie = WebUtils.getCookie(request, refreshTokenCookieName);
         if (cookie == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorMessage("Refresh token cookie not found.", ErrorAssetEnum.AUTHENTICATION,ErrorCodeEnum.NO_REFRESH_TOKEN));
@@ -120,41 +99,14 @@ public class AuthenticationController {
         String requestRefreshToken = cookie.getValue();
 
         try {
-            // 2. Find and verify the refresh token in the database
-            Optional<RefreshToken> refreshTokenOptional = tokenService.findByToken(requestRefreshToken);
 
-            if (refreshTokenOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorMessage("Invalid Refresh token.", ErrorAssetEnum.AUTHENTICATION,ErrorCodeEnum.INVALID_REFRESH_TOKEN));
-            }
+            AuthenticationResult result = authenticationService.updateAcessTokenWithRefreshToken(requestRefreshToken);
 
-            RefreshToken refreshToken = tokenService.verifyRefreshToken(refreshTokenOptional.get()); // Checks expiry, throws if expired
+            return ResponseEntity.ok(new LoginResponseDTO(result.accessToken()));
 
-            // 3. Generate a new access token
-            User user = refreshToken.getUser();
-
-            // Ensurse the user's token version hasn't changed
-            // This handles cases where the user logged out elsewhere or password changed
-            Optional<User> currentUserOpt = userRepository.findById(user.getId());
-            if(currentUserOpt.isEmpty() || currentUserOpt.get().getTokenVersion() != user.getTokenVersion()) {
-                // Token version mismatch or user deleted - invalidate the refresh token
-                tokenService.deleteByToken(requestRefreshToken);
-                // Clear the cookie on the client side
-                ResponseCookie deleteCookie = ResponseCookie.from(refreshTokenCookieName, "")
-                        .httpOnly(cookieHttpOnly).secure(cookieSecure).path(cookiePath)
-                        .maxAge(0).sameSite(cookieSameSite).build();
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
-                        .body(new ErrorMessage("Session invalidated. Please log in again.", ErrorAssetEnum.AUTHENTICATION,ErrorCodeEnum.SESSION_INVALIDATED));
-            }
-
-
-            String newAccessToken = tokenService.generateAccessToken(user);
-
-            return ResponseEntity.ok(new LoginResponseDTO(newAccessToken));
-
-        } catch (RuntimeException ex) {
+        } catch (InvalidRefreshTokenException | SessionInvalidatedException ex) {
             System.err.println("Refresh token validation failed: " + ex.getMessage());
-
+            // Clear the cookie
             ResponseCookie deleteCookie = ResponseCookie.from(refreshTokenCookieName, "")
                     .httpOnly(cookieHttpOnly).secure(cookieSecure).path(cookiePath)
                     .maxAge(0).sameSite(cookieSameSite).build();

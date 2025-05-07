@@ -1,4 +1,4 @@
-package com.escritr.escritr.auth;
+package com.escritr.escritr.user.domain;
 
 import jakarta.persistence.*;
 

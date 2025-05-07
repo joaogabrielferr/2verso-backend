@@ -1,5 +1,6 @@
-package com.escritr.escritr.auth;
+package com.escritr.escritr.user.repository;
 
+import com.escritr.escritr.user.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

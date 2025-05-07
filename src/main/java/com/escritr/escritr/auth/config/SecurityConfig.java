@@ -1,7 +1,6 @@
-package com.escritr.escritr.auth.security;
+package com.escritr.escritr.auth.config;
 
-import com.escritr.escritr.auth.jwt.JwtFilter;
-import com.escritr.escritr.auth.MyUserDetailsService;
+import com.escritr.escritr.user.service.MyUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,10 +22,13 @@ public class SecurityConfig {
 
     private final MyUserDetailsService myUserDetailsService;
     private final JwtFilter jwtFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint; // Inject this
 
-    public SecurityConfig(MyUserDetailsService myUserDetailsService, JwtFilter jwtFilter) {
+
+    public SecurityConfig(MyUserDetailsService myUserDetailsService, JwtFilter jwtFilter, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
         this.myUserDetailsService = myUserDetailsService;
         this.jwtFilter = jwtFilter;
+        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
     }
 
     @Bean
@@ -36,13 +38,17 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**","/api/articles/slug/**").permitAll() // login, register,article by slug
-                        .requestMatchers(HttpMethod.GET,"/api/articles").permitAll() //articles on
+                        .requestMatchers("/api/auth/**", "/api/articles/slug/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/articles").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/articles/{username}").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .userDetailsService(myUserDetailsService)
+                .userDetailsService(myUserDetailsService) // Still useful for other auth mechanisms or if UserDetails are loaded elsewhere
+                .exceptionHandling(exceptions ->
+                                exceptions.authenticationEntryPoint(customAuthenticationEntryPoint) // Configure custom entry point
+                        // You might also want a .accessDeniedHandler(customAccessDeniedHandler) for 403 errors
+                )
                 .build();
     }
 

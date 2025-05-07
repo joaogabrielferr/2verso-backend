@@ -1,13 +1,15 @@
-package com.escritr.escritr.auth.jwt;
+package com.escritr.escritr.auth.service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.escritr.escritr.auth.DTOs.DecodedToken;
-import com.escritr.escritr.auth.User;
-import com.escritr.escritr.auth.refresh_token.RefreshToken;
-import com.escritr.escritr.auth.refresh_token.RefreshTokenRepository;
+import com.escritr.escritr.auth.controller.DTOs.DecodedToken;
+import com.escritr.escritr.common.ErrorAssetEnum;
+import com.escritr.escritr.common.ErrorCodeEnum;
+import com.escritr.escritr.user.domain.User;
+import com.escritr.escritr.auth.model.RefreshToken;
+import com.escritr.escritr.auth.repository.RefreshTokenRepository;
 import com.escritr.escritr.exceptions.AuthenticationTokenException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,8 +49,8 @@ public class TokenService {
                     .withExpiresAt(generateAccessTokenExpirationDate())
                     .sign(algorithm);
         } catch (JWTCreationException ex) {
-            // Log the exception properly
-            throw new RuntimeException("Error while generating access token", ex);
+            //TODO: Log the exception properly
+            throw new AuthenticationTokenException("Error while generating access token", ErrorAssetEnum.AUTHENTICATION,ErrorCodeEnum.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -118,7 +120,7 @@ public class TokenService {
 
             if (tokenVersion == null || username == null || email == null) {
                 System.err.println("Token missing required claims.");
-                throw  new AuthenticationTokenException("Token missing required claims.");
+                throw  new AuthenticationTokenException("Token missing required claims.", ErrorAssetEnum.AUTHENTICATION, ErrorCodeEnum.INVALID_TOKEN);
             }
 
 
@@ -131,7 +133,7 @@ public class TokenService {
         } catch (JWTVerificationException ex) {
             // Log the verification failure
             System.err.println("Access Token Verification Failed: " + ex.getMessage());
-            throw new AuthenticationTokenException("Invalid or expired token");
+            throw new AuthenticationTokenException("Invalid or expired token",ErrorAssetEnum.AUTHENTICATION,ErrorCodeEnum.INVALID_TOKEN);
         } catch (Exception e) {
             // Catch other potential errors like UUID parsing
             System.err.println("Error decoding token: " + e.getMessage());

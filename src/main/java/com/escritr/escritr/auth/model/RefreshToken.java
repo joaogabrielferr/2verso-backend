@@ -1,6 +1,6 @@
-package com.escritr.escritr.auth.refresh_token;
+package com.escritr.escritr.auth.model;
 
-import com.escritr.escritr.auth.User;
+import com.escritr.escritr.user.domain.User;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
