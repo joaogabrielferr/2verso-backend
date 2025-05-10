@@ -1,0 +1,30 @@
+# docker-compose-dev.yml
+version: '3.8'
+
+services:
+  postgres_db_dev:
+    image: postgres:16
+    container_name: escritr_postgres_dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB_DEV}
+    ports:
+      - "5432:5432" # Map host port 5432 to container port 5432
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - escritr_dev_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_DEV}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_dev_data:
+
+networks:
+  escritr_dev_network: # Optional for a single service, but doesn't hurt
+    driver: bridge

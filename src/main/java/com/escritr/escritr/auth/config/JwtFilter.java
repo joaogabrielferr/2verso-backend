@@ -33,13 +33,10 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService; // Inject these
     private final UserRepository userRepository;
-    // private final ObjectMapper objectMapper; // No longer needed here for error responses
 
-    // Constructor for dependency injection
-    public JwtFilter(TokenService tokenService, UserRepository userRepository /*, ObjectMapper objectMapper*/) {
+    public JwtFilter(TokenService tokenService, UserRepository userRepository) {
         this.tokenService = tokenService;
         this.userRepository = userRepository;
-        // this.objectMapper = objectMapper;
     }
 
     private String getTokenFromHeader(HttpServletRequest request) {

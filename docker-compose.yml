@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  escritr_api_prod:
+    image: joaogabrielferr/escritr-api:latest
+    container_name: escritr_api_prod
+    ports:
+      - "80:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod # Already set in Dockerfile ENV, but good to be explicit
+      # These MUST be set in production server's environment or an .env file on the server
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL_PROD}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME_PROD}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD_PROD}
+      SPRING_FLYWAY_SCHEMAS_PROD: ${SPRING_FLYWAY_SCHEMAS_PROD:-escritr} # Example with default
+      JWT_SECRET_KEY_PROD: ${API_JWT_SECRET_KEY_PROD}
+    restart: always
+    networks:
+      - escritr_prod_network
+
+networks:
+  escritr_prod_network:
+    driver: bridge

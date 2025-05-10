@@ -1,0 +1,27 @@
+
+# Git files
+.git
+.gitignore
+
+# IDE specific files
+.idea/
+*.iml
+*.iws
+.vscode/
+
+# Maven target directory (the Dockerfile copies the specific JAR from here)
+target/
+
+# Build and log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local environment files (if any, besides the .env for docker-compose)
+.env # General .env files if you have others not specific to docker-compose
+.env.*.local
+
+# Operating System specific files
+.DS_Store
+Thumbs.db
