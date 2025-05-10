@@ -16,5 +16,4 @@ COPY --from=builder /app/target/*.jar app.jar
 RUN chown appuser:appgroup app.jar
 USER appuser
 EXPOSE 8080
-ENV SPRING_PROFILES_ACTIVE=prod
 ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]

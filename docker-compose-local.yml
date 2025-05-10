@@ -1,3 +1,6 @@
+# docker-compose-dev.yml
+version: '3.8'
+
 services:
   postgres_db_dev:
     image: postgres:16
@@ -7,7 +10,7 @@ services:
       POSTGRES_PASSWORD: mypassword
       POSTGRES_DB: mydatabase
     ports:
-      - "5432:5432"
+      - "5432:5432" # Map host port 5432 to container port 5432
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     networks:
@@ -19,26 +22,9 @@ services:
       timeout: 5s
       retries: 5
 
-  writing_api:
-    image: joaogabrielferr/writing-api
-    container_name: escritr_api_dev
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres_db_dev:5432/mydatabase
-      SPRING_DATASOURCE_USERNAME: myuser
-      SPRING_DATASOURCE_PASSWORD: mypassword
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres_db_dev:
-        condition: service_healthy
-    networks:
-      - escritr_dev_network
-    restart: unless-stopped
-
 volumes:
   postgres_dev_data:
 
 networks:
-  escritr_dev_network:
+  escritr_dev_network: # Optional for a single service, but doesn't hurt
     driver: bridge
