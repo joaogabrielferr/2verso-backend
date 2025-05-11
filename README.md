@@ -1,5 +1,7 @@
 # writing app - backend
 
+docker-compose -f docker-compose-dev.yml up -d to run locally, port 8080
+
 RoadMap
 
 ### User Authentication
