@@ -7,6 +7,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.escritr.escritr.auth.controller.DTOs.DecodedToken;
 import com.escritr.escritr.common.ErrorAssetEnum;
 import com.escritr.escritr.common.ErrorCodeEnum;
+import com.escritr.escritr.exceptions.InvalidRefreshTokenException;
 import com.escritr.escritr.user.domain.User;
 import com.escritr.escritr.auth.model.RefreshToken;
 import com.escritr.escritr.auth.repository.RefreshTokenRepository;
@@ -75,7 +76,7 @@ public class TokenService {
         if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
             refreshTokenRepository.delete(token);
             // TODO: throw specific exception here
-            throw new RuntimeException("Refresh token " + token.getToken() + " was expired. Please log in again.");
+            throw new InvalidRefreshTokenException("Refresh token " + token.getToken() + " was expired. Please log in again.");
         }
         return token;
     }
@@ -117,7 +118,7 @@ public class TokenService {
             String username = jwt.getClaim("usr").asString();
             String email = jwt.getClaim("eml").asString();
             UUID userId = UUID.fromString(jwt.getSubject());
-
+            System.out.println(tokenVersion);
             if (tokenVersion == null || username == null || email == null) {
                 System.err.println("Token missing required claims.");
                 throw  new AuthenticationTokenException("Token missing required claims.", ErrorAssetEnum.AUTHENTICATION, ErrorCodeEnum.INVALID_TOKEN);
@@ -134,10 +135,9 @@ public class TokenService {
             // Log the verification failure
             System.err.println("Access Token Verification Failed: " + ex.getMessage());
             throw new AuthenticationTokenException("Invalid or expired token",ErrorAssetEnum.AUTHENTICATION,ErrorCodeEnum.INVALID_TOKEN);
-        } catch (Exception e) {
-            // Catch other potential errors like UUID parsing
-            System.err.println("Error decoding token: " + e.getMessage());
-            return null;
+        }catch (IllegalArgumentException e) { // Example: Catching specific expected exceptions
+            System.err.println("Error decoding token (e.g., UUID parsing): " + e.getMessage());
+            throw new AuthenticationTokenException("Malformed token data", ErrorAssetEnum.AUTHENTICATION, ErrorCodeEnum.INVALID_TOKEN);
         }
     }
 

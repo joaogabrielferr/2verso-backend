@@ -5,6 +5,8 @@ import com.escritr.escritr.common.ErrorCodeEnum;
 import com.escritr.escritr.common.ErrorMessage;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.coyote.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -21,6 +23,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionsHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionsHandler.class);
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<String> handleEndpointNotFound(NoHandlerFoundException ex) {
@@ -117,7 +121,8 @@ public class GlobalExceptionsHandler {
 
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGenericException(Exception ex) {
+    public ResponseEntity<?> handleGenericException(Exception ex,WebRequest request) {
+        logger.error("Unhandled exception during request to {}: {}", request.getDescription(false), ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Internal server error"));
     }

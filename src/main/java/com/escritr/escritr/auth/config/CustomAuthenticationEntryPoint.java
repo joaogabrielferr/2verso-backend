@@ -22,7 +22,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     private static final Logger logger = LoggerFactory.getLogger(CustomAuthenticationEntryPoint.class);
 
 
-    private final ObjectMapper objectMapper; // Inject or create new
+    private final ObjectMapper objectMapper;
 
     public CustomAuthenticationEntryPoint(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
