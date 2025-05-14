@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.Optional;
 
@@ -73,7 +74,7 @@ public class TokenService {
     }
 
     public RefreshToken verifyRefreshToken(RefreshToken token) {
-        if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
+        if (token.getExpiryDate().isBefore(Instant.now())) {
             refreshTokenRepository.delete(token);
             // TODO: throw specific exception here
             throw new InvalidRefreshTokenException("Refresh token " + token.getToken() + " was expired. Please log in again.");
@@ -93,16 +94,11 @@ public class TokenService {
 
 
     private Instant generateAccessTokenExpirationDate() {
-        return LocalDateTime.now()
-
-                .plusMinutes(accessTokenExpirationMinutes)
-                .toInstant(ZoneOffset.of("-03:00"));
+        return Instant.now().plus(accessTokenExpirationMinutes, ChronoUnit.MINUTES);
     }
 
     private Instant generateRefreshTokenExpirationDate() {
-        return LocalDateTime.now()
-                .plusDays(refreshTokenExpirationDays)
-                .toInstant(ZoneOffset.of("-03:00"));
+        return Instant.now().plus(refreshTokenExpirationDays, ChronoUnit.DAYS);
     }
 
     public DecodedToken decodeToken(String token) {

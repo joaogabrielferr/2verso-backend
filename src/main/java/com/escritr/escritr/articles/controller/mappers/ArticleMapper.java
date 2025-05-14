@@ -1,8 +1,8 @@
-package com.escritr.escritr.articles.mappers;
+package com.escritr.escritr.articles.controller.mappers;
 
-import com.escritr.escritr.articles.Article;
-import com.escritr.escritr.articles.DTOs.ArticlePostDTO;
-import com.escritr.escritr.articles.DTOs.ArticleResponseDTO;
+import com.escritr.escritr.articles.model.Article;
+import com.escritr.escritr.articles.controller.DTOs.ArticlePostDTO;
+import com.escritr.escritr.articles.controller.DTOs.ArticleResponseDTO;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring",uses = {AuthorMapper.class})

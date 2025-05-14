@@ -35,7 +35,6 @@ import java.util.Optional;
 @RequestMapping("/api/auth")
 public class AuthenticationController {
 
-    private final UserRepository userRepository;
     private final TokenService tokenService;
     private final AuthenticationService authenticationService;
 
@@ -60,11 +59,9 @@ public class AuthenticationController {
 
 
     public AuthenticationController(
-            UserRepository userRepository,
             TokenService tokenService,
             AuthenticationService authenticationService
     ) {
-        this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.authenticationService = authenticationService;
     }
@@ -146,14 +143,7 @@ public class AuthenticationController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterDTO data) {
 
-        if (this.userRepository.findByEmailOrUsername(data.email(), data.username()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorMessage("There is already a user with that email or username.", ErrorAssetEnum.AUTHENTICATION,ErrorCodeEnum.USER_ALREADY_EXISTS));
-        }
-
-        String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
-        User user = new User(data.username(), data.email(), encryptedPassword);
-        this.userRepository.save(user);
-
+        this.authenticationService.register(data);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

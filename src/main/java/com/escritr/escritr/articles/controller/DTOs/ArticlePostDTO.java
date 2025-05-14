@@ -1,4 +1,4 @@
-package com.escritr.escritr.articles.DTOs;
+package com.escritr.escritr.articles.controller.DTOs;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

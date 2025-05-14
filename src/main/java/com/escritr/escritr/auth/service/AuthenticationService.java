@@ -3,6 +3,7 @@ package com.escritr.escritr.auth.service;
 import com.escritr.escritr.auth.controller.DTOs.AuthenticationResult;
 import com.escritr.escritr.auth.controller.DTOs.LoginDTO;
 import com.escritr.escritr.auth.controller.DTOs.LoginResponseDTO;
+import com.escritr.escritr.auth.controller.DTOs.RegisterDTO;
 import com.escritr.escritr.auth.model.RefreshToken;
 import com.escritr.escritr.auth.model.UserDetailsImpl;
 import com.escritr.escritr.auth.repository.RefreshTokenRepository;
@@ -12,6 +13,7 @@ import com.escritr.escritr.common.ErrorMessage;
 import com.escritr.escritr.exceptions.AuthenticationTokenException;
 import com.escritr.escritr.exceptions.InvalidRefreshTokenException;
 import com.escritr.escritr.exceptions.SessionInvalidatedException;
+import com.escritr.escritr.exceptions.UserAlreadyExistsException;
 import com.escritr.escritr.user.domain.User;
 import com.escritr.escritr.user.repository.UserRepository;
 import org.springframework.http.HttpHeaders;
@@ -22,6 +24,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -82,5 +85,16 @@ public class AuthenticationService {
         String newAcessToken = tokenService.generateAccessToken(currentUser);
         return new AuthenticationResult(newAcessToken,null);
     }
+
+    public void register(RegisterDTO data){
+        if (this.userRepository.findByEmailOrUsername(data.email(), data.username()).isPresent()) {
+            throw new UserAlreadyExistsException();
+        }
+
+        String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
+        User user = new User(data.username(), data.email(), encryptedPassword);
+        this.userRepository.save(user);
+    }
+
 
 }

@@ -1,8 +1,10 @@
-package com.escritr.escritr.articles;
+package com.escritr.escritr.articles.service;
 
-import com.escritr.escritr.articles.DTOs.ArticlePostDTO;
-import com.escritr.escritr.articles.DTOs.ArticleResponseDTO;
-import com.escritr.escritr.articles.mappers.ArticleMapper;
+import com.escritr.escritr.articles.repository.ArticleRepository;
+import com.escritr.escritr.articles.controller.DTOs.ArticlePostDTO;
+import com.escritr.escritr.articles.controller.DTOs.ArticleResponseDTO;
+import com.escritr.escritr.articles.controller.mappers.ArticleMapper;
+import com.escritr.escritr.articles.model.Article;
 import com.escritr.escritr.user.domain.User;
 import com.escritr.escritr.user.repository.UserRepository;
 import com.escritr.escritr.common.HtmlParser;
@@ -63,12 +65,14 @@ public class ArticleService {
             throw new InternalServerErrorException("Failed to map dto to entity");
         }
 
+        article.setContent(HtmlParser.cleanContent(article.getContent()));
+
         article.setAuthor(author);
 
         article.setFirstParagraph(HtmlParser.extractFirstParagraph(article.getContent()));
 
         String baseSlug = this.generateSlug(article.getTitle());
-        String uniqueSlug = this.ensureUniqueSlug(baseSlug,article.getId());
+        String uniqueSlug = this.ensureUniqueSlug(baseSlug,null);
         article.setSlug(uniqueSlug);
 
         Article savedArticle = articleRepository.save(article);
@@ -107,7 +111,7 @@ public class ArticleService {
 
         article.setTitle(dto.title());
         article.setSubtitle(dto.subtitle());
-        article.setContent(dto.content());
+        article.setContent(HtmlParser.cleanContent(dto.content()));
         article.setAuthor(author);
         article.setUpdatedAt(LocalDateTime.now());
 
@@ -141,7 +145,7 @@ public class ArticleService {
         slug = slug.toLowerCase(Locale.ENGLISH);
         slug = CONSECUTIVE_HYPHENS.matcher(slug).replaceAll("-"); // Replace multiple hyphens
         slug = EDGES_HYPHEN.matcher(slug).replaceAll(""); // Trim leading/trailing hyphens
-        //Truncate slug if too long
+        //Truncate if too long
          int maxLength = 240;
          if (slug.length() > maxLength) {
              slug = slug.substring(0, maxLength);
@@ -153,7 +157,7 @@ public class ArticleService {
 
     }
 
-    private String ensureUniqueSlug(String baseSlug, UUID articleIdToExclude) {
+    private String ensureUniqueSlug(String baseSlug, UUID articleIdToExcludeFromCheck) {
         String candidateSlug = baseSlug;
 
         for (int attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt++) {
@@ -164,7 +168,7 @@ public class ArticleService {
             log.debug("Attempt {}: Checking uniqueness for slug '{}'", attempt + 1, candidateSlug);
             Optional<Article> existing = articleRepository.findBySlug(candidateSlug);
 
-            if (existing.isEmpty() || (articleIdToExclude != null && existing.get().getId().equals(articleIdToExclude))) {
+            if (existing.isEmpty() || (articleIdToExcludeFromCheck != null && existing.get().getId().equals(articleIdToExcludeFromCheck))) {
                 log.info("Unique slug found: '{}'", candidateSlug);
                 return candidateSlug;
             }

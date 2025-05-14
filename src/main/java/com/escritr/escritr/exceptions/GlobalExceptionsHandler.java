@@ -24,7 +24,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionsHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionsHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionsHandler.class);
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<String> handleEndpointNotFound(NoHandlerFoundException ex) {
@@ -100,16 +100,23 @@ public class GlobalExceptionsHandler {
     }
 
     @ExceptionHandler(SessionInvalidatedException.class)
-    public ResponseEntity<ErrorMessage> handleSessionInvalidated(SessionInvalidatedException ex, WebRequest request, HttpServletResponse response) {
-//        log.warn("Attempt to use refresh token for invalidated session: {}", ex.getMessage());
+    public ResponseEntity<ErrorMessage> handleSessionInvalidated(SessionInvalidatedException ex) {
+        log.warn("Attempt to use refresh token for invalidated session: {}", ex.getMessage());
         ErrorMessage errorMessage = new ErrorMessage(ex.getMessage(),ex.getErrorAsset(),ex.getErrorCode());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMessage);
     }
 
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ErrorMessage> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
+        log.warn("Attempt to use create an user with an username of email already registered: {}", ex.getMessage());
+        ErrorMessage errorMessage = new ErrorMessage(ex.getMessage(),ex.getErrorAsset(),ex.getErrorCode());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorMessage);
+    }
+
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorMessage> handleAuthenticationException(AuthenticationException ex, WebRequest request) {
-
+    public ResponseEntity<ErrorMessage> handleAuthenticationException(AuthenticationException ex) {
+        log.warn("error while authenticating: {}", ex.getMessage());
 
         ErrorMessage errorMessage = new ErrorMessage(
                 "Invalid username or password.",
@@ -122,7 +129,7 @@ public class GlobalExceptionsHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(Exception ex,WebRequest request) {
-        logger.error("Unhandled exception during request to {}: {}", request.getDescription(false), ex.getMessage(), ex);
+        log.error("Unhandled exception during request to {}: {}", request.getDescription(false), ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Internal server error"));
     }

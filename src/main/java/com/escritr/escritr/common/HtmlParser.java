@@ -12,7 +12,7 @@ public class HtmlParser {
 
         String input = Jsoup.clean(_input,safe());
 
-        if(input == null || input.isBlank())return "";
+        if(input.isBlank())return "";
 
         Document document = Jsoup.parse(input);
         Elements candidates = document.select("p,h1,h2");
@@ -22,6 +22,10 @@ public class HtmlParser {
         }
 
         return "";
+    }
+
+    public static String cleanContent(String input){
+        return Jsoup.clean(input,safe());
     }
 
     public static Safelist safe() {

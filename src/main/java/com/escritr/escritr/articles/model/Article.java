@@ -1,4 +1,4 @@
-package com.escritr.escritr.articles;
+package com.escritr.escritr.articles.model;
 
 import com.escritr.escritr.user.domain.User;
 import jakarta.persistence.*;

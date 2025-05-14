@@ -1,6 +1,6 @@
 package com.escritr.escritr.auth.config;
 
-import com.escritr.escritr.user.service.MyUserDetailsService;
+import com.escritr.escritr.auth.service.MyUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;

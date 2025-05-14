@@ -1,4 +1,4 @@
-package com.escritr.escritr.user.service;
+package com.escritr.escritr.auth.service;
 
 import com.escritr.escritr.auth.model.UserDetailsImpl;
 import com.escritr.escritr.user.repository.UserRepository;
