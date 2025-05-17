@@ -1,9 +1,7 @@
 package com.escritr.escritr.auth.controller;
 
-import com.escritr.escritr.auth.controller.DTOs.AuthenticationResult;
-import com.escritr.escritr.auth.controller.DTOs.LoginDTO;
-import com.escritr.escritr.auth.controller.DTOs.LoginResponseDTO;
-import com.escritr.escritr.auth.controller.DTOs.RegisterDTO;
+import com.escritr.escritr.auth.controller.DTOs.*;
+import com.escritr.escritr.auth.controller.mappers.UserMapper;
 import com.escritr.escritr.auth.service.AuthenticationService;
 import com.escritr.escritr.auth.service.TokenService;
 import com.escritr.escritr.auth.model.RefreshToken;
@@ -32,62 +30,84 @@ import java.util.Optional;
 
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("api/auth")
 public class AuthenticationController {
 
     private final TokenService tokenService;
     private final AuthenticationService authenticationService;
+    private final UserMapper userMapper;
 
     // Read cookie properties from application.properties/yml for flexibility
     @Value("${api.security.token.refresh-cookie-name:refreshToken}")
     private String refreshTokenCookieName;
 
-    @Value("${api.security.token.refresh-token-expiration-days:7}")
+    @Value("${api.security.token.refresh-token-expiration-days}")
     private long refreshTokenExpirationDays;
 
-    @Value("${api.security.token.cookie-secure:true}")
+    @Value("${api.security.token.cookie-secure}")
     private boolean cookieSecure;
 
-    @Value("${api.security.token.cookie-http-only:true}")
+    @Value("${api.security.token.cookie-http-only}")
     private boolean cookieHttpOnly;
 
-    @Value("${api.security.token.cookie-path:/api/auth}")
+    @Value("${api.security.token.cookie-path}")
     private String cookiePath;
 
-    @Value("${api.security.token.cookie-same-site:Strict}")
+    @Value("${api.security.token.cookie-same-site}")
     private String cookieSameSite;
+
+    @Value("${api.security.token.domain.value}")
+    private String cookieDomain;
 
 
     public AuthenticationController(
             TokenService tokenService,
-            AuthenticationService authenticationService
+            AuthenticationService authenticationService,
+            UserMapper userMapper
     ) {
         this.tokenService = tokenService;
         this.authenticationService = authenticationService;
+        this.userMapper = userMapper;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody @Valid LoginDTO data, HttpServletResponse response) {
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginDTO data) {
 
 
-            AuthenticationResult authResult = this.authenticationService.authenticateAndGenerateTokens(data);
+        AuthenticationResult authResult = this.authenticationService.authenticateAndGenerateTokens(data);
 
         // Create HttpOnly Cookie for Refresh Token
-            ResponseCookie refreshTokenCookie = ResponseCookie.from(refreshTokenCookieName, authResult.refreshTokenValue())
-                    .httpOnly(cookieHttpOnly)
-                    .secure(cookieSecure) // Should be true in production (HTTPS)
-                    .path(cookiePath) // Important: restrict path!!
-                    .maxAge(refreshTokenExpirationDays * 24 * 60 * 60) // Max age in seconds
-                    .sameSite(cookieSameSite) // "Strict" or "Lax"
-                    .build();
 
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                    .body(new LoginResponseDTO(authResult.accessToken()));
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from(refreshTokenCookieName, authResult.refreshTokenValue())
+                .httpOnly(cookieHttpOnly)
+                .secure(cookieSecure) // Should be true in production (HTTPS)
+                .path(cookiePath)
+                .maxAge(refreshTokenExpirationDays * 24 * 60 * 60)
+                .sameSite(cookieSameSite);
+
+        if (cookieDomain != null && !cookieDomain.isEmpty() && !"localhost".equalsIgnoreCase(cookieDomain)) {
+            cookieBuilder.domain(cookieDomain); // Dynamically set
+        }
+
+        ResponseCookie refreshTokenCookie = cookieBuilder.build();
+
+
+//            ResponseCookie refreshTokenCookie = ResponseCookie.from(refreshTokenCookieName, authResult.refreshTokenValue())
+//                    .httpOnly(cookieHttpOnly)
+//                    .secure(cookieSecure) // Should be true in production (HTTPS)
+//                    .path(cookiePath)
+//                    .maxAge(refreshTokenExpirationDays * 24 * 60 * 60)
+//                    .sameSite(cookieSameSite);
+
+
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                .body(new LoginResponseDTO(authResult.accessToken(),userMapper.userToUserUserLoginDTO(authResult.user())));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> refreshToken(HttpServletRequest request) {
 
         Cookie cookie = WebUtils.getCookie(request, refreshTokenCookieName);
         if (cookie == null) {
@@ -99,14 +119,26 @@ public class AuthenticationController {
 
             AuthenticationResult result = authenticationService.updateAcessTokenWithRefreshToken(requestRefreshToken);
 
-            return ResponseEntity.ok(new LoginResponseDTO(result.accessToken()));
+            return ResponseEntity.ok(new LoginResponseDTO(result.accessToken(),userMapper.userToUserUserLoginDTO(result.user())));
 
         } catch (InvalidRefreshTokenException | SessionInvalidatedException ex) {
             System.err.println("Refresh token validation failed: " + ex.getMessage());
             // Clear the cookie
-            ResponseCookie deleteCookie = ResponseCookie.from(refreshTokenCookieName, "")
-                    .httpOnly(cookieHttpOnly).secure(cookieSecure).path(cookiePath)
-                    .maxAge(0).sameSite(cookieSameSite).build();
+            ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from(refreshTokenCookieName, "")
+                    .httpOnly(cookieHttpOnly)
+                    .secure(cookieSecure)
+                    .path(cookiePath)
+                    .maxAge(0)
+                    .sameSite(cookieSameSite);
+
+            if (cookieDomain != null && !cookieDomain.isEmpty() && !"localhost".equalsIgnoreCase(cookieDomain)) {
+                cookieBuilder.domain(cookieDomain);
+            }
+
+            ResponseCookie deleteCookie = cookieBuilder.build();
+//            ResponseCookie deleteCookie = ResponseCookie.from(refreshTokenCookieName, "")
+//                    .httpOnly(cookieHttpOnly).secure(cookieSecure).path(cookiePath)
+//                    .maxAge(0).sameSite(cookieSameSite).build();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
                     .body(new ErrorMessage(ex.getMessage(), ErrorAssetEnum.AUTHENTICATION,ErrorCodeEnum.INVALID_REFRESH_TOKEN));
@@ -127,13 +159,26 @@ public class AuthenticationController {
             tokenService.deleteByToken(token);
         }
 
-        ResponseCookie deleteCookie = ResponseCookie.from(refreshTokenCookieName, "")
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from(refreshTokenCookieName, "")
                 .httpOnly(cookieHttpOnly)
                 .secure(cookieSecure)
                 .path(cookiePath)
                 .maxAge(0)
-                .sameSite(cookieSameSite)
-                .build();
+                .sameSite(cookieSameSite);
+
+        if (cookieDomain != null && !cookieDomain.isEmpty() && !"localhost".equalsIgnoreCase(cookieDomain)) {
+            cookieBuilder.domain(cookieDomain);
+        }
+
+        ResponseCookie deleteCookie = cookieBuilder.build();
+
+//        ResponseCookie deleteCookie = ResponseCookie.from(refreshTokenCookieName, "")
+//                .httpOnly(cookieHttpOnly)
+//                .secure(cookieSecure)
+//                .path(cookiePath)
+//                .maxAge(0)
+//                .sameSite(cookieSameSite)
+//                .build();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())

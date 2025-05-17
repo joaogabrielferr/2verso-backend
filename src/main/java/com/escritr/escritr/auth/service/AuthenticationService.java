@@ -51,11 +51,12 @@ public class AuthenticationService {
         Authentication authentication = authenticateUser(loginData.login(), loginData.password());
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         User user = userDetails.getUser();
-
         String accessToken = tokenService.generateAccessToken(user);
         RefreshToken refreshToken = tokenService.createRefreshToken(user);
 
-        return new AuthenticationResult(accessToken, refreshToken.getToken());
+        //User user = this.userRepository.findByEmailOrUsername(loginData.login(),loginData.login());
+
+        return new AuthenticationResult(accessToken, refreshToken.getToken(),user);
 
     }
 
@@ -73,7 +74,9 @@ public class AuthenticationService {
 
         refreshToken = tokenService.verifyRefreshToken(refreshToken);
 
+        //lazy fetch
         User user = refreshToken.getUser();
+
         User currentUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new SessionInvalidatedException("User not found."));
 
@@ -83,7 +86,7 @@ public class AuthenticationService {
         }
 
         String newAcessToken = tokenService.generateAccessToken(currentUser);
-        return new AuthenticationResult(newAcessToken,null);
+        return new AuthenticationResult(newAcessToken,null,user);
     }
 
     public void register(RegisterDTO data){

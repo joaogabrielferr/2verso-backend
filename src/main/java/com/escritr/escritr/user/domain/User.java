@@ -69,4 +69,11 @@ public class User{
     public void incrementTokenVersion() {
         this.tokenVersion++;
     }
+
+    @Override
+    public String toString(){
+        return getUsername() + "," + getEmail() + "," + getPassword() + "," + getId() + "," + getTokenVersion();
+
+    }
+
 }
