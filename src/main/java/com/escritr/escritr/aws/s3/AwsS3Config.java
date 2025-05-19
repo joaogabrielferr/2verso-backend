@@ -25,8 +25,8 @@ public class AwsS3Config {
     public S3Client s3Client() {
         Region region = Region.of(awsRegion);
 
-        // For Production (EC2 Instance Profile)
-        // for local dev with ~/.aws/credentials (currently using this) or env vars AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+        // For Production: IAM Roles (EC2 Instance Profile)
+        // for local dev: ~/.aws/credentials (I'm currently using this) or env vars AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
         if (accessKey == null || secretKey == null) {
             return S3Client.builder()
                     .region(region)

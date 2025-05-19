@@ -1,4 +1,4 @@
-package com.escritr.escritr.common;
+package com.escritr.escritr.common.enums;
 
 public enum ErrorCodeEnum {
     TOKEN_EXPIRED("TOKEN_EXPIRED"),
@@ -10,7 +10,8 @@ public enum ErrorCodeEnum {
     USER_ALREADY_EXISTS("USER_ALREADY_EXISTS"),
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR"),
     UNAUTHORIZED("UNAUTHORIZED"),
-    STORAGE_ERROR("STORAGE_ERROR");
+    STORAGE_ERROR("STORAGE_ERROR"),
+    FILE_UPLOAD_ERROR("FILE_UPLOAD_ERROR");
 
     private final String value;
 

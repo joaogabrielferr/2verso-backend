@@ -7,7 +7,7 @@ import com.escritr.escritr.articles.controller.mappers.ArticleMapper;
 import com.escritr.escritr.articles.model.Article;
 import com.escritr.escritr.user.domain.User;
 import com.escritr.escritr.user.repository.UserRepository;
-import com.escritr.escritr.common.HtmlParser;
+import com.escritr.escritr.common.helpers.HtmlParser;
 import com.escritr.escritr.exceptions.InternalServerErrorException;
 import com.escritr.escritr.exceptions.ResourceNotFoundException;
 import jakarta.validation.Valid;

@@ -1,7 +1,7 @@
 package com.escritr.escritr.auth.config;
-import com.escritr.escritr.common.ErrorAssetEnum;
-import com.escritr.escritr.common.ErrorCodeEnum;
-import com.escritr.escritr.common.ErrorMessage;
+import com.escritr.escritr.common.enums.ErrorAssetEnum;
+import com.escritr.escritr.common.enums.ErrorCodeEnum;
+import com.escritr.escritr.common.helpers.ErrorMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

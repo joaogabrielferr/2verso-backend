@@ -4,15 +4,11 @@ import com.escritr.escritr.auth.controller.DTOs.*;
 import com.escritr.escritr.auth.controller.mappers.UserMapper;
 import com.escritr.escritr.auth.service.AuthenticationService;
 import com.escritr.escritr.auth.service.TokenService;
-import com.escritr.escritr.auth.model.RefreshToken;
-import com.escritr.escritr.auth.repository.RefreshTokenRepository;
-import com.escritr.escritr.common.ErrorAssetEnum;
-import com.escritr.escritr.common.ErrorCodeEnum;
-import com.escritr.escritr.common.ErrorMessage;
+import com.escritr.escritr.common.enums.ErrorAssetEnum;
+import com.escritr.escritr.common.enums.ErrorCodeEnum;
+import com.escritr.escritr.common.helpers.ErrorMessage;
 import com.escritr.escritr.exceptions.InvalidRefreshTokenException;
 import com.escritr.escritr.exceptions.SessionInvalidatedException;
-import com.escritr.escritr.user.domain.User;
-import com.escritr.escritr.user.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,11 +18,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.WebUtils;
-
-import java.util.Optional;
 
 
 @RestController

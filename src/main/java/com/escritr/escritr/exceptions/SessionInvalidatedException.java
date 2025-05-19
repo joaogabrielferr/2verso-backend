@@ -1,8 +1,7 @@
 package com.escritr.escritr.exceptions;
 
-import com.escritr.escritr.common.ErrorAssetEnum;
-import com.escritr.escritr.common.ErrorCodeEnum;
-import org.springframework.http.HttpStatus;
+import com.escritr.escritr.common.enums.ErrorAssetEnum;
+import com.escritr.escritr.common.enums.ErrorCodeEnum;
 
 public class SessionInvalidatedException extends BaseException {
 

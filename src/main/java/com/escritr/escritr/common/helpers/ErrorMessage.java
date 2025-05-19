@@ -1,6 +1,7 @@
-package com.escritr.escritr.common;
+package com.escritr.escritr.common.helpers;
 
-import org.flywaydb.core.api.ErrorCode;
+import com.escritr.escritr.common.enums.ErrorAssetEnum;
+import com.escritr.escritr.common.enums.ErrorCodeEnum;
 
 public class ErrorMessage {
 

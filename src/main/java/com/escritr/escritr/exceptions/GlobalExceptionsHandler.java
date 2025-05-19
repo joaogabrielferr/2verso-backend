@@ -1,15 +1,12 @@
 package com.escritr.escritr.exceptions;
 
-import com.escritr.escritr.common.ErrorAssetEnum;
-import com.escritr.escritr.common.ErrorCodeEnum;
-import com.escritr.escritr.common.ErrorMessage;
-import jakarta.servlet.http.HttpServletResponse;
-import org.apache.coyote.Response;
+import com.escritr.escritr.common.enums.ErrorAssetEnum;
+import com.escritr.escritr.common.enums.ErrorCodeEnum;
+import com.escritr.escritr.common.helpers.ErrorMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -116,7 +113,7 @@ public class GlobalExceptionsHandler {
 
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ErrorMessage> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
-        log.warn("Attempt to use create an user with an username of email already registered: {}", ex.getMessage());
+        log.warn("Attempt to use create an user with an username or email already registered: {}", ex.getMessage());
         ErrorMessage errorMessage = new ErrorMessage(ex.getMessage(),ex.getErrorAsset(),ex.getErrorCode());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorMessage);
     }
@@ -134,6 +131,42 @@ public class GlobalExceptionsHandler {
         return new ResponseEntity<>(errorMessage, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(FileUploadException.class)
+    public ResponseEntity<ErrorMessage> handleFileUploadException(FileUploadException ex) {
+        log.warn("error while uploading image: {}", ex.getMessage());
+
+        ErrorMessage errorMessage = new ErrorMessage(
+                ex.getMessage(),
+                ErrorAssetEnum.ARTICLE,
+                ErrorCodeEnum.FILE_UPLOAD_ERROR
+        );
+        return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(FileSizeLimitExceededException.class)
+    public ResponseEntity<ErrorMessage> handleFileSizeLimitException(FileSizeLimitExceededException ex) {
+        log.warn("error while uploading image, file size exceeded the limit : {}", ex.getMessage());
+
+        ErrorMessage errorMessage = new ErrorMessage(
+                ex.getMessage(),
+                ErrorAssetEnum.ARTICLE,
+                ErrorCodeEnum.FILE_UPLOAD_ERROR
+        );
+        return new ResponseEntity<>(errorMessage, HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+
+    @ExceptionHandler(UnsupportedFileTypeException.class)
+    public ResponseEntity<ErrorMessage> handleUnsupportedFileTypeException(UnsupportedFileTypeException ex) {
+        log.warn("error while uploading image, file type not supported : {}", ex.getMessage());
+
+        ErrorMessage errorMessage = new ErrorMessage(
+                ex.getMessage(),
+                ErrorAssetEnum.ARTICLE,
+                ErrorCodeEnum.FILE_UPLOAD_ERROR
+        );
+        return new ResponseEntity<>(errorMessage, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(Exception ex,WebRequest request) {
@@ -141,6 +174,8 @@ public class GlobalExceptionsHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Internal server error"));
     }
+
+
 
 
 

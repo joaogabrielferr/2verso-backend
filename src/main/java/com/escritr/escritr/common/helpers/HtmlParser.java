@@ -1,4 +1,4 @@
-package com.escritr.escritr.common;
+package com.escritr.escritr.common.helpers;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

@@ -2,24 +2,14 @@ package com.escritr.escritr.auth.service;
 
 import com.escritr.escritr.auth.controller.DTOs.AuthenticationResult;
 import com.escritr.escritr.auth.controller.DTOs.LoginDTO;
-import com.escritr.escritr.auth.controller.DTOs.LoginResponseDTO;
 import com.escritr.escritr.auth.controller.DTOs.RegisterDTO;
 import com.escritr.escritr.auth.model.RefreshToken;
 import com.escritr.escritr.auth.model.UserDetailsImpl;
-import com.escritr.escritr.auth.repository.RefreshTokenRepository;
-import com.escritr.escritr.common.ErrorAssetEnum;
-import com.escritr.escritr.common.ErrorCodeEnum;
-import com.escritr.escritr.common.ErrorMessage;
-import com.escritr.escritr.exceptions.AuthenticationTokenException;
 import com.escritr.escritr.exceptions.InvalidRefreshTokenException;
 import com.escritr.escritr.exceptions.SessionInvalidatedException;
 import com.escritr.escritr.exceptions.UserAlreadyExistsException;
 import com.escritr.escritr.user.domain.User;
 import com.escritr.escritr.user.repository.UserRepository;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,8 +17,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 public class AuthenticationService {

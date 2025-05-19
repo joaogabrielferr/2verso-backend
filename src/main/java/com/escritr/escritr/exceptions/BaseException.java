@@ -1,7 +1,7 @@
 package com.escritr.escritr.exceptions;
 
-import com.escritr.escritr.common.ErrorAssetEnum;
-import com.escritr.escritr.common.ErrorCodeEnum;
+import com.escritr.escritr.common.enums.ErrorAssetEnum;
+import com.escritr.escritr.common.enums.ErrorCodeEnum;
 
 public class BaseException extends RuntimeException{
     private final ErrorAssetEnum errorAsset;

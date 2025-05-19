@@ -111,13 +111,10 @@ public class ArticleController {
         if (fileKey == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Could not extract S3 key from URL."));
         }
-        try {
-            s3Service.deleteFile(fileKey);
-            return ResponseEntity.ok(Map.of("message", "File deleted successfully from URL: " + fileUrl));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to delete file: " + e.getMessage()));
-        }
+
+        s3Service.deleteFile(fileKey);
+        return ResponseEntity.ok(Map.of("message", "File deleted successfully from URL: " + fileUrl));
+
     }
 
 
