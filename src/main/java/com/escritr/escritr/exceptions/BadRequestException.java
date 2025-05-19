@@ -1,5 +1,8 @@
 package com.escritr.escritr.exceptions;
 
-public class BadRequestException extends RuntimeException {
-    public BadRequestException(String message) { super(message); }
+import com.escritr.escritr.common.ErrorAssetEnum;
+import com.escritr.escritr.common.ErrorCodeEnum;
+
+public class BadRequestException extends BaseException {
+    public BadRequestException(String message, ErrorAssetEnum asset, ErrorCodeEnum error) { super(message,asset,error); }
 }

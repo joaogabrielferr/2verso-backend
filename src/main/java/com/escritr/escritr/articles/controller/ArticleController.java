@@ -3,12 +3,17 @@ package com.escritr.escritr.articles.controller;
 import com.escritr.escritr.articles.service.ArticleService;
 import com.escritr.escritr.articles.controller.DTOs.ArticlePostDTO;
 import com.escritr.escritr.articles.controller.DTOs.ArticleResponseDTO;
+import com.escritr.escritr.aws.s3.S3Service;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -16,11 +21,14 @@ import java.util.UUID;
 public class ArticleController {
 
     private final ArticleService articleService;
+    private final S3Service s3Service;
 
     ArticleController(
-        ArticleService articleService
+        ArticleService articleService,
+        S3Service s3Service
     ){
         this.articleService = articleService;
+        this.s3Service = s3Service;
     }
 
 
@@ -82,6 +90,37 @@ public class ArticleController {
         ArticleResponseDTO article = this.articleService.findBySlug(slug);
         return ResponseEntity.ok(article);
     }
+
+    @PostMapping("/image")
+    public ResponseEntity<?> uploadImage(@RequestParam("file")MultipartFile file){
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "File is empty"));
+        }
+        String fileUrl = s3Service.uploadFile(file);
+        return ResponseEntity.ok(Map.of("url", fileUrl));
+    }
+
+
+    @DeleteMapping("/image")
+    public ResponseEntity<?> deleteImageByUrl(@RequestParam("url") String fileUrl) {
+        if (fileUrl == null || fileUrl.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "File URL is required."));
+        }
+        String fileKey = s3Service.extractKeyFromUrl(fileUrl);
+        System.out.println(fileKey);
+        if (fileKey == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Could not extract S3 key from URL."));
+        }
+        try {
+            s3Service.deleteFile(fileKey);
+            return ResponseEntity.ok(Map.of("message", "File deleted successfully from URL: " + fileUrl));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to delete file: " + e.getMessage()));
+        }
+    }
+
+
 
 
 
