@@ -25,6 +25,9 @@ public class HtmlParser {
     }
 
     public static String cleanContent(String input){
+        if (input == null) {
+            return "";
+        }
         return Jsoup.clean(input,safe());
     }
 
@@ -34,17 +37,14 @@ public class HtmlParser {
                 .addProtocols("img", "src", "http", "https")
                 .addAttributes("span", "data-type", "data-id", "data-label")
                 .addAttributes("a", "href", "title", "target", "rel")
-                .addProtocols("a", "href", "http", "https", "mailto");
-//        return Safelist.basicWithImages()
-//                .addTags("u", "s", "code", "pre")
-//                // Attributes for code highlighting
-//                .addAttributes("code", "class")
-//                // Attributes for images
-//                .addAttributes("img", "src", "alt", "title")
-//                .addProtocols("img", "src", "http", "https")
-//                //for mentions or custom nodes
-//                .addAttributes("span", "data-type", "data-id", "data-label")
-//                .addTags("span");
+                .addProtocols("a", "href", "http", "https", "mailto")
+                .addAttributes("span", "data-type", "data-id", "data-label");
+    }
+
+    public static String cleanNormalText(String titleInput) {
+        // Remove all HTML tags, leaving only text content
+        String plainText = Jsoup.clean(titleInput, Safelist.none());
+        return plainText.trim().replaceAll("\\s+", " ");
     }
 
 }

@@ -167,6 +167,18 @@ public class GlobalExceptionsHandler {
         return new ResponseEntity<>(errorMessage, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
 
+    @ExceptionHandler(WrongParameterException.class)
+    public ResponseEntity<ErrorMessage> handleWrongParameterException(WrongParameterException ex) {
+        log.warn("error while uploading image, wrong parameter exception : {}", ex.getMessage());
+
+        ErrorMessage errorMessage = new ErrorMessage(
+                ex.getMessage(),
+                ex.getErrorAsset(),
+                ex.getErrorCode()
+        );
+        return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(Exception ex,WebRequest request) {

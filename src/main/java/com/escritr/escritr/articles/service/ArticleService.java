@@ -5,6 +5,9 @@ import com.escritr.escritr.articles.controller.DTOs.ArticlePostDTO;
 import com.escritr.escritr.articles.controller.DTOs.ArticleResponseDTO;
 import com.escritr.escritr.articles.controller.mappers.ArticleMapper;
 import com.escritr.escritr.articles.model.Article;
+import com.escritr.escritr.common.enums.ErrorAssetEnum;
+import com.escritr.escritr.common.enums.ErrorCodeEnum;
+import com.escritr.escritr.exceptions.WrongParameterException;
 import com.escritr.escritr.user.domain.User;
 import com.escritr.escritr.user.repository.UserRepository;
 import com.escritr.escritr.common.helpers.HtmlParser;
@@ -18,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
@@ -34,6 +38,8 @@ public class ArticleService {
     private static final Pattern EDGES_HYPHEN = Pattern.compile("(^-|-$)");
     private static final Pattern CONSECUTIVE_HYPHENS = Pattern.compile("-{2,}");
     private static final int MAX_SLUG_ATTEMPTS = 100;
+    private static final int MAX_TITLE_SIZE = 300;
+    private static final int MAX_SUBTITLE_SIZE = 500;
 
     private static final Logger log = LoggerFactory.getLogger(ArticleService.class);
 
@@ -41,6 +47,7 @@ public class ArticleService {
 
     private final UserRepository userRepository;
     private final ArticleMapper articleMapper;
+
 
     ArticleService(
             ArticleRepository articleRepository,
@@ -54,6 +61,14 @@ public class ArticleService {
 
     public ArticleResponseDTO create(@Valid ArticlePostDTO articlePostDTO){
 
+        if(articlePostDTO.title().length() > MAX_TITLE_SIZE){
+            throw new WrongParameterException("title is too long", ErrorAssetEnum.ARTICLE, ErrorCodeEnum.INPUT_FORMAT_ERROR);
+        }
+
+        if(!articlePostDTO.subtitle().isEmpty() && articlePostDTO.subtitle().length() > MAX_SUBTITLE_SIZE){
+            throw new WrongParameterException("subtitle is too long",ErrorAssetEnum.ARTICLE, ErrorCodeEnum.INPUT_FORMAT_ERROR);
+        }
+
 
         User author = this.userRepository.findByEmailOrUsername(articlePostDTO.authorUsername(),articlePostDTO.authorUsername()).orElseThrow(
                 ()-> new ResourceNotFoundException("User not found with username:" + articlePostDTO.authorUsername())
@@ -64,6 +79,9 @@ public class ArticleService {
         if(article == null){
             throw new InternalServerErrorException("Failed to map dto to entity");
         }
+
+        article.setTitle(HtmlParser.cleanNormalText(article.getTitle()));
+        article.setSubtitle(HtmlParser.cleanNormalText(article.getSubtitle()));
 
         article.setContent(HtmlParser.cleanContent(article.getContent()));
 
@@ -109,8 +127,8 @@ public class ArticleService {
 
         Article article = this.articleRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("No article found with id:" + id));
 
-        article.setTitle(dto.title());
-        article.setSubtitle(dto.subtitle());
+        article.setTitle(HtmlParser.cleanNormalText(dto.title()));
+        article.setSubtitle(HtmlParser.cleanNormalText(dto.subtitle()));
         article.setContent(HtmlParser.cleanContent(dto.content()));
         article.setAuthor(author);
         article.setUpdatedAt(LocalDateTime.now());

@@ -32,9 +32,24 @@ services:
     depends_on:
       postgres_db_dev:
         condition: service_healthy
+      localstack:
+        condition: service_healthy
+
     networks:
       - escritr_dev_network
     restart: unless-stopped
+
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1                #more logs from LocalStack
+      - DEFAULT_REGION=us-east-2
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack" # Persist LocalStack state
+      - "/var/run/docker.sock:/var/run/docker.sock"
 
 volumes:
   postgres_dev_data:

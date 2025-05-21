@@ -21,6 +21,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.WebUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("api/auth")
@@ -184,6 +187,28 @@ public class AuthenticationController {
         this.authenticationService.register(data);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    @GetMapping("/check-email/{email}")
+    public ResponseEntity<?> checkEmail(@PathVariable String email){
+
+        Boolean result = authenticationService.checkEmailAvailability(email);
+        System.out.println("check email result for " + email + ":" + result.toString());
+        Map<String,Boolean> response = new HashMap<>();
+        response.put("available",result);
+        return ResponseEntity.ok(response);
+
+    }
+
+    @GetMapping("/check-username/{username}")
+    public ResponseEntity<?> checkUsername(@PathVariable String username){
+
+        Boolean result = authenticationService.checkUsernameAvailability(username);
+        Map<String,Boolean> response = new HashMap<>();
+        response.put("available",result);
+        return ResponseEntity.ok(response);
+
+    }
+
 
 
 }
