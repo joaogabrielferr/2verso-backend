@@ -17,13 +17,13 @@ Basic profile setup (username, bio, profile picture)
 
 CRUD (ok)
 
-Ability to upload images
+upload images to aws s3 (ok)
 
 Save drafts
 
 ### Article Discovery & Reading
 
-Public articles page (accessible without login)
+Public articles page (accessible without login) (ok)
 
 Basic search & filtering
 
