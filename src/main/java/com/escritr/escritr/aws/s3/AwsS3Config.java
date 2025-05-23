@@ -36,21 +36,16 @@ public class AwsS3Config {
     public S3Client s3Client() {
         Region region = Region.of(awsRegion);
 
-        // For Production: IAM Roles (EC2 Instance Profile)
-        // or if using aws directly instead of localstack locally: ~/.aws/credentials or env vars AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-        if (accessKey == null || secretKey == null) {
-            return S3Client.builder()
-                    .region(region)
-                    .credentialsProvider(DefaultCredentialsProvider.create())
-                    .build();
-        }
-
-        // For local dev explicitly using application.properties keys
+        // Reminder:
+        // For production i should use IAM Roles (EC2 Instance Profile)
+        // for staging or hmg env i can use aws directly with keys located on ~/.aws/credentials
+        // either way the aws sdk will recognize the keys automatically
         return S3Client.builder()
                 .region(region)
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(accessKey, secretKey)))
+                .credentialsProvider(DefaultCredentialsProvider.create())
                 .build();
+
+
     }
 
     @Bean

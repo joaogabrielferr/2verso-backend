@@ -87,16 +87,6 @@ public class AuthenticationController {
 
         ResponseCookie refreshTokenCookie = cookieBuilder.build();
 
-
-//            ResponseCookie refreshTokenCookie = ResponseCookie.from(refreshTokenCookieName, authResult.refreshTokenValue())
-//                    .httpOnly(cookieHttpOnly)
-//                    .secure(cookieSecure) // Should be true in production (HTTPS)
-//                    .path(cookiePath)
-//                    .maxAge(refreshTokenExpirationDays * 24 * 60 * 60)
-//                    .sameSite(cookieSameSite);
-
-
-
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                 .body(new LoginResponseDTO(authResult.accessToken(),userMapper.userToUserUserLoginDTO(authResult.user())));

@@ -5,8 +5,10 @@ import com.escritr.escritr.articles.controller.DTOs.ArticlePostDTO;
 import com.escritr.escritr.articles.controller.DTOs.ArticleResponseDTO;
 import com.escritr.escritr.articles.controller.mappers.ArticleMapper;
 import com.escritr.escritr.articles.model.Article;
+import com.escritr.escritr.auth.model.UserDetailsImpl;
 import com.escritr.escritr.common.enums.ErrorAssetEnum;
 import com.escritr.escritr.common.enums.ErrorCodeEnum;
+import com.escritr.escritr.exceptions.AuthenticationTokenException;
 import com.escritr.escritr.exceptions.WrongParameterException;
 import com.escritr.escritr.user.domain.User;
 import com.escritr.escritr.user.repository.UserRepository;
@@ -18,6 +20,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,13 +63,25 @@ public class ArticleService {
         this.articleMapper = articleMapper;
     }
 
-    public ArticleResponseDTO create(@Valid ArticlePostDTO articlePostDTO){
+    public ArticleResponseDTO create(@Valid ArticlePostDTO articlePostDTO, Authentication authentication){
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AuthenticationTokenException("Not authorized",ErrorAssetEnum.ARTICLE,ErrorCodeEnum.INVALID_CREDENTIALS);
+        }
+
+        String authenticatedUsername = extractUsername(authentication);
+
+        log.info("creating article->user from dto:{}, user from token:{}",articlePostDTO.authorUsername(),authenticatedUsername);
+
+        if(!articlePostDTO.authorUsername().equals(authenticatedUsername)){
+            throw new AuthenticationTokenException("Not authorized",ErrorAssetEnum.ARTICLE,ErrorCodeEnum.INVALID_CREDENTIALS);
+        }
 
         if(articlePostDTO.title().length() > MAX_TITLE_SIZE){
             throw new WrongParameterException("title is too long", ErrorAssetEnum.ARTICLE, ErrorCodeEnum.INPUT_FORMAT_ERROR);
         }
 
-        if(!articlePostDTO.subtitle().isEmpty() && articlePostDTO.subtitle().length() > MAX_SUBTITLE_SIZE){
+        if(articlePostDTO.subtitle() != null && !articlePostDTO.subtitle().isEmpty() && articlePostDTO.subtitle().length() > MAX_SUBTITLE_SIZE){
             throw new WrongParameterException("subtitle is too long",ErrorAssetEnum.ARTICLE, ErrorCodeEnum.INPUT_FORMAT_ERROR);
         }
 
@@ -74,28 +90,57 @@ public class ArticleService {
                 ()-> new ResourceNotFoundException("User not found with username:" + articlePostDTO.authorUsername())
         );
 
-        Article article = articleMapper.articlePostDTOtoArticle(articlePostDTO);
+        try{
+            log.debug("before mapping article");
+            Article article = articleMapper.articlePostDTOtoArticle(articlePostDTO);
+            log.debug("after mapping article");
 
-        if(article == null){
-            throw new InternalServerErrorException("Failed to map dto to entity");
+            if(article == null){
+                log.debug("Failed to map dto to entity");
+                throw new InternalServerErrorException("An internal error have occurred");
+            }
+
+            article.setTitle(HtmlParser.cleanNormalText(article.getTitle()));
+
+            if(article.getSubtitle() != null){
+                article.setSubtitle(HtmlParser.cleanNormalText(article.getSubtitle()));
+            }
+
+
+            article.setContent(HtmlParser.cleanContent(article.getContent()));
+
+            article.setAuthor(author);
+
+            article.setFirstParagraph(HtmlParser.extractFirstParagraph(article.getContent()));
+
+            String baseSlug = this.generateSlug(article.getTitle());
+            String uniqueSlug = this.ensureUniqueSlug(baseSlug,null);
+            article.setSlug(uniqueSlug);
+
+            Article savedArticle = articleRepository.save(article);
+
+            return articleMapper.articleToResponseDTO(savedArticle);
+
+        }catch(Exception ex){
+            log.debug(ex.getMessage());
+            throw new RuntimeException();
         }
 
-        article.setTitle(HtmlParser.cleanNormalText(article.getTitle()));
-        article.setSubtitle(HtmlParser.cleanNormalText(article.getSubtitle()));
-
-        article.setContent(HtmlParser.cleanContent(article.getContent()));
-
-        article.setAuthor(author);
-
-        article.setFirstParagraph(HtmlParser.extractFirstParagraph(article.getContent()));
-
-        String baseSlug = this.generateSlug(article.getTitle());
-        String uniqueSlug = this.ensureUniqueSlug(baseSlug,null);
-        article.setSlug(uniqueSlug);
-
-        Article savedArticle = articleRepository.save(article);
-        return articleMapper.articleToResponseDTO(savedArticle);
     }
+
+    private String extractUsername(Authentication authentication){
+        String authenticatedUsername;
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails) {
+            authenticatedUsername = ((UserDetails) principal).getUsername();
+        } else if (principal instanceof String) {
+            authenticatedUsername = (String) principal;
+        } else {
+            throw new InternalServerErrorException("Invalid user information");
+        }
+        return authenticatedUsername;
+    }
+
 
 
 
@@ -119,7 +164,27 @@ public class ArticleService {
         return articles.map(articleMapper::articleToResponseDTO);
     }
 
-    public ArticleResponseDTO update(UUID id, @Valid ArticlePostDTO dto){
+    public ArticleResponseDTO update(UUID id, @Valid ArticlePostDTO dto,Authentication authentication){
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AuthenticationTokenException("Not authorized",ErrorAssetEnum.ARTICLE,ErrorCodeEnum.INVALID_CREDENTIALS);
+        }
+
+        String authenticatedUsername = extractUsername(authentication);
+
+        log.info("updating article->user from dto:{}, user from token:{}",dto.authorUsername(),authenticatedUsername);
+
+        if(!dto.authorUsername().equals(authenticatedUsername)){
+            throw new AuthenticationTokenException("Not authorized",ErrorAssetEnum.ARTICLE,ErrorCodeEnum.INVALID_CREDENTIALS);
+        }
+
+        if(dto.title().length() > MAX_TITLE_SIZE){
+            throw new WrongParameterException("title is too long", ErrorAssetEnum.ARTICLE, ErrorCodeEnum.INPUT_FORMAT_ERROR);
+        }
+
+        if(dto.subtitle() != null && !dto.subtitle().isEmpty() && dto.subtitle().length() > MAX_SUBTITLE_SIZE){
+            throw new WrongParameterException("subtitle is too long",ErrorAssetEnum.ARTICLE, ErrorCodeEnum.INPUT_FORMAT_ERROR);
+        }
 
         User author = this.userRepository.findByEmailOrUsername(dto.authorUsername(),dto.authorUsername()).orElseThrow(
                 ()-> new ResourceNotFoundException("No user found with username:" + dto.authorUsername())
@@ -127,8 +192,13 @@ public class ArticleService {
 
         Article article = this.articleRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("No article found with id:" + id));
 
+        try{
         article.setTitle(HtmlParser.cleanNormalText(dto.title()));
-        article.setSubtitle(HtmlParser.cleanNormalText(dto.subtitle()));
+
+        if(dto.subtitle() != null){
+            article.setSubtitle(HtmlParser.cleanNormalText(dto.subtitle()));
+        }
+
         article.setContent(HtmlParser.cleanContent(dto.content()));
         article.setAuthor(author);
         article.setUpdatedAt(LocalDateTime.now());
@@ -137,6 +207,11 @@ public class ArticleService {
 
         Article savedArticle = articleRepository.save(article);
         return articleMapper.articleToResponseDTO(savedArticle);
+        }catch(Exception ex){
+            log.debug(ex.getMessage());
+            throw new RuntimeException();
+        }
+
 
 
     }

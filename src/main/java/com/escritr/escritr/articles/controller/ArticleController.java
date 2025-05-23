@@ -7,6 +7,7 @@ import com.escritr.escritr.aws.s3.S3Service;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -33,9 +34,9 @@ public class ArticleController {
 
 
     @PostMapping()
-    public ResponseEntity<ArticleResponseDTO> create(@RequestBody ArticlePostDTO articlePostDto){
+    public ResponseEntity<ArticleResponseDTO> create(@RequestBody ArticlePostDTO articlePostDto, Authentication authentication){
 
-        ArticleResponseDTO response = this.articleService.create(articlePostDto);
+        ArticleResponseDTO response = this.articleService.create(articlePostDto,authentication);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(response.id())
@@ -71,9 +72,9 @@ public class ArticleController {
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<ArticleResponseDTO> update(@PathVariable UUID id, @RequestBody ArticlePostDTO dto){
+    public ResponseEntity<ArticleResponseDTO> update(@PathVariable UUID id, @RequestBody ArticlePostDTO dto,Authentication authentication){
 
-        ArticleResponseDTO article = articleService.update(id,dto);
+        ArticleResponseDTO article = articleService.update(id,dto,authentication);
         return ResponseEntity.ok(article);
 
     }

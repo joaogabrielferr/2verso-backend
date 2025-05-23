@@ -16,5 +16,6 @@ public record ArticlePostDTO(
         String thumbnailUrl,
         @NotNull(message = "author username is required")
         @NotBlank(message = "author username cannot be empty")
-        String authorUsername) {
+        String authorUsername
+) {
 }
