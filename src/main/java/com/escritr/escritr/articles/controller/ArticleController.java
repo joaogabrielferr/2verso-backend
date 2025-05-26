@@ -80,14 +80,14 @@ public class ArticleController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Boolean> delete(@PathVariable UUID id){
-        this.articleService.delete(id);
+    public ResponseEntity<Boolean> delete(@PathVariable UUID id,Authentication authentication){
+        this.articleService.delete(id,authentication);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/slug/{slug}")
     public ResponseEntity<ArticleResponseDTO> findBySlug(@PathVariable String slug){
-
+        System.out.println(slug);
         ArticleResponseDTO article = this.articleService.findBySlug(slug);
         return ResponseEntity.ok(article);
     }

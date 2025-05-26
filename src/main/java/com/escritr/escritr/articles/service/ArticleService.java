@@ -15,23 +15,29 @@ import com.escritr.escritr.user.repository.UserRepository;
 import com.escritr.escritr.common.helpers.HtmlParser;
 import com.escritr.escritr.exceptions.InternalServerErrorException;
 import com.escritr.escritr.exceptions.ResourceNotFoundException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.client.RestTemplate;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Service
@@ -47,20 +53,30 @@ public class ArticleService {
 
     private static final Logger log = LoggerFactory.getLogger(ArticleService.class);
 
+    @Value("${nextjs.revalidation.url}")
+    private String nextjsRevalidationUrl;
+
+    @Value("${nextjs.revalidation.secret}")
+    private String nextjsRevalidationSecret;
+
+
     private final ArticleRepository articleRepository;
 
     private final UserRepository userRepository;
     private final ArticleMapper articleMapper;
+    private final ObjectMapper objectMapper;
 
 
     ArticleService(
             ArticleRepository articleRepository,
             ArticleMapper articleMapper,
-            UserRepository userRepository
+            UserRepository userRepository,
+            ObjectMapper objectMapper
             ){
         this.articleRepository = articleRepository;
         this.userRepository = userRepository;
         this.articleMapper = articleMapper;
+        this.objectMapper = objectMapper;
     }
 
     public ArticleResponseDTO create(@Valid ArticlePostDTO articlePostDTO, Authentication authentication){
@@ -172,12 +188,6 @@ public class ArticleService {
 
         String authenticatedUsername = extractUsername(authentication);
 
-        log.info("updating article->user from dto:{}, user from token:{}",dto.authorUsername(),authenticatedUsername);
-
-        if(!dto.authorUsername().equals(authenticatedUsername)){
-            throw new AuthenticationTokenException("Not authorized",ErrorAssetEnum.ARTICLE,ErrorCodeEnum.INVALID_CREDENTIALS);
-        }
-
         if(dto.title().length() > MAX_TITLE_SIZE){
             throw new WrongParameterException("title is too long", ErrorAssetEnum.ARTICLE, ErrorCodeEnum.INPUT_FORMAT_ERROR);
         }
@@ -192,6 +202,12 @@ public class ArticleService {
 
         Article article = this.articleRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("No article found with id:" + id));
 
+        log.info("updating article->user from dto:{}, user from token:{}",dto.authorUsername(),authenticatedUsername);
+
+        if(!article.getAuthor().getUsername().equals(authenticatedUsername)){
+            throw new AuthenticationTokenException("Not authorized",ErrorAssetEnum.ARTICLE,ErrorCodeEnum.INVALID_CREDENTIALS);
+        }
+
         try{
         article.setTitle(HtmlParser.cleanNormalText(dto.title()));
 
@@ -203,10 +219,18 @@ public class ArticleService {
         article.setAuthor(author);
         article.setUpdatedAt(LocalDateTime.now());
 
-        article.setFirstParagraph(HtmlParser.extractFirstParagraph(article.getContent()));
+        if(dto.thumbnailUrl() != null){
+            article.setThumbnailUrl(dto.thumbnailUrl());
+        }
 
+        article.setFirstParagraph(HtmlParser.extractFirstParagraph(article.getContent()));
+        log.info("saving content:{}",article.getContent());
         Article savedArticle = articleRepository.save(article);
+
+        triggerNextJsRevalidation(savedArticle.getSlug(),authenticatedUsername);
+
         return articleMapper.articleToResponseDTO(savedArticle);
+
         }catch(Exception ex){
             log.debug(ex.getMessage());
             throw new RuntimeException();
@@ -216,16 +240,63 @@ public class ArticleService {
 
     }
 
+    public void triggerNextJsRevalidation(String articleSlug,String username) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("x-revalidation-secret", nextjsRevalidationSecret);
+
+
+        String requestBodyJson;
+        try {
+            //JSON object using Jackson
+            Map<String, Object> requestBodyMap = new HashMap<>();
+            requestBodyMap.put("articleSlug", articleSlug);
+            if (username != null && !username.trim().isEmpty()) {
+                requestBodyMap.put("username", username);
+            }
+            requestBodyJson = objectMapper.writeValueAsString(requestBodyMap);
+        } catch (Exception e) {
+            log.error("Error creating JSON request body for revalidation (slug: {}, username: {}): {}",
+                    articleSlug, username, e.getMessage(), e);
+            return;
+        }
+
+
+        HttpEntity<String> entity = new HttpEntity<>(requestBodyJson, headers);
+
+        try {
+            restTemplate.exchange(nextjsRevalidationUrl, HttpMethod.POST, entity, String.class);
+            log.info("Successfully triggered revalidation for slug: {}",articleSlug);
+        } catch (Exception e) {
+            log.error("Error triggering Next.js revalidation for slug {} : {}",articleSlug,e.getMessage());
+        }
+    }
+
     public ArticleResponseDTO findBySlug(String slug){
         Article article = this.articleRepository.findBySlug(slug).orElseThrow(()-> new ResourceNotFoundException("No article found with slug:" + slug));
         return articleMapper.articleToResponseDTO(article);
     }
 
-    public void delete(UUID id){
+    public void delete(UUID id,Authentication authentication){
+
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AuthenticationTokenException("Not authorized",ErrorAssetEnum.ARTICLE,ErrorCodeEnum.INVALID_CREDENTIALS);
+        }
+
+        String authenticatedUsername = extractUsername(authentication);
+
 
         Article article = this.articleRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("No article found with id:" + id));
 
+
+        if(!article.getAuthor().getUsername().equals(authenticatedUsername)){
+            throw new AuthenticationTokenException("Not authorized",ErrorAssetEnum.ARTICLE,ErrorCodeEnum.INVALID_CREDENTIALS);
+        }
+
+        log.info("deleting article->user from dto:{}, user from token:{}",article.getAuthor().getUsername(),authenticatedUsername);
         this.articleRepository.delete(article);
     }
 
