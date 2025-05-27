@@ -38,7 +38,7 @@ public class AwsS3Config {
 
         // Reminder:
         // For production i should use IAM Roles (EC2 Instance Profile)
-        // for staging or hmg env i can use aws directly with keys located on ~/.aws/credentials
+        // for hmg env i can use aws directly with keys located on ~/.aws/credentials
         // either way the aws sdk will recognize the keys automatically
         return S3Client.builder()
                 .region(region)
