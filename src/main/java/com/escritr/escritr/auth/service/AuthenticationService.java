@@ -90,7 +90,7 @@ public class AuthenticationService {
         }
 
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
-        User user = new User(data.username(), data.email(), encryptedPassword);
+        User user = new User(data.username(), data.email(), encryptedPassword, data.name());
         this.userRepository.save(user);
     }
 

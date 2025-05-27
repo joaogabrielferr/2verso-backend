@@ -10,7 +10,6 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode
 public class User{
 
@@ -21,8 +20,14 @@ public class User{
     private String email;
     private String password;
     private String name;
-
     private int tokenVersion = 0;
+
+    public User(String username,String email,String password,String name){
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.name = name;
+    }
 
 
     public void incrementTokenVersion() {

@@ -73,10 +73,9 @@ public class AuthenticationController {
         AuthenticationResult authResult = this.authenticationService.authenticateAndGenerateTokens(data);
 
         // Create HttpOnly Cookie for Refresh Token
-
         ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from(refreshTokenCookieName, authResult.refreshTokenValue())
                 .httpOnly(cookieHttpOnly)
-                .secure(cookieSecure) // Should be true in production (HTTPS)
+                .secure(cookieSecure)
                 .path(cookiePath)
                 .maxAge(refreshTokenExpirationDays * 24 * 60 * 60)
                 .sameSite(cookieSameSite);
@@ -122,9 +121,6 @@ public class AuthenticationController {
             }
 
             ResponseCookie deleteCookie = cookieBuilder.build();
-//            ResponseCookie deleteCookie = ResponseCookie.from(refreshTokenCookieName, "")
-//                    .httpOnly(cookieHttpOnly).secure(cookieSecure).path(cookiePath)
-//                    .maxAge(0).sameSite(cookieSameSite).build();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
                     .body(new ErrorMessage(ex.getMessage(), ErrorAssetEnum.AUTHENTICATION,ErrorCodeEnum.INVALID_REFRESH_TOKEN));
@@ -157,14 +153,6 @@ public class AuthenticationController {
         }
 
         ResponseCookie deleteCookie = cookieBuilder.build();
-
-//        ResponseCookie deleteCookie = ResponseCookie.from(refreshTokenCookieName, "")
-//                .httpOnly(cookieHttpOnly)
-//                .secure(cookieSecure)
-//                .path(cookiePath)
-//                .maxAge(0)
-//                .sameSite(cookieSameSite)
-//                .build();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
