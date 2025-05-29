@@ -1,5 +1,6 @@
 package com.escritr.escritr.auth.service;
 
+import com.escritr.escritr.articles.service.ArticleService;
 import com.escritr.escritr.auth.controller.DTOs.AuthenticationResult;
 import com.escritr.escritr.auth.controller.DTOs.LoginDTO;
 import com.escritr.escritr.auth.controller.DTOs.RegisterDTO;
@@ -13,6 +14,8 @@ import com.escritr.escritr.exceptions.UserAlreadyExistsException;
 import com.escritr.escritr.exceptions.WrongParameterException;
 import com.escritr.escritr.user.domain.User;
 import com.escritr.escritr.user.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthenticationService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
 
 
     private final AuthenticationManager authenticationManager;
@@ -60,6 +65,7 @@ public class AuthenticationService {
 
     public AuthenticationResult updateAcessTokenWithRefreshToken(String requestRefreshToken){
 
+        try{
         RefreshToken refreshToken = tokenService.findByToken(requestRefreshToken)
                 .orElseThrow(() -> new InvalidRefreshTokenException("Invalid Refresh token."));
 
@@ -78,6 +84,15 @@ public class AuthenticationService {
 
         String newAcessToken = tokenService.generateAccessToken(currentUser);
         return new AuthenticationResult(newAcessToken,null,user);
+
+        }catch(InvalidRefreshTokenException | SessionInvalidatedException ex){
+            log.error("Refresh token validation failed: {}", ex.getMessage());
+            throw ex;
+        }catch(Exception ex){
+            log.error("Error during token refresh: {}", ex.getMessage());
+            throw ex;
+        }
+
     }
 
     public void register(RegisterDTO data){

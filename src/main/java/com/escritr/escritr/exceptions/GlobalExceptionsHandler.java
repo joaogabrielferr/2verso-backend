@@ -182,9 +182,13 @@ public class GlobalExceptionsHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(Exception ex,WebRequest request) {
-        log.error("Unhandled exception during request to {}: {}", request.getDescription(false), ex.getMessage(), ex);
+//        log.error("Unhandled exception during request to {}: {}", request.getDescription(false), ex.getMessage(), ex);
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                .body(Map.of("error", "Internal server error"));
+        log.error("Simplified Handler caught: {} - {}", ex.getClass().getName(), ex.getMessage());
+        String errorMessage = "An internal error occurred.";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Internal server error"));
+                .body(Map.of("error", "Internal Server Error - Simplified Handler", "detail", errorMessage));
     }
 
 

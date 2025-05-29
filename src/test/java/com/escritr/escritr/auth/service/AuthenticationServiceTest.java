@@ -50,7 +50,7 @@ class AuthenticationServiceTest {
 
     @BeforeEach
     void setUp() {
-        sampleUser = new User("testuser", "test@example.com", "encodedPassword");
+        sampleUser = new User("testuser", "test@example.com", "encodedPassword","name");
         sampleUser.setId(UUID.randomUUID());
         sampleUser.setTokenVersion(1);
 
@@ -123,7 +123,7 @@ class AuthenticationServiceTest {
     @DisplayName("updateAcessTokenWithRefreshToken should return new access token for valid refresh token and matching version")
     void updateAccessTokenWithRefreshToken_Success() {
         String requestRefreshToken = "valid-refresh-token";
-        User currentUserState = new User("testuser", "test@example.com", "encodedPassword");
+        User currentUserState = new User("testuser", "test@example.com", "encodedPassword","name");
         currentUserState.setId(sampleUser.getId());
         currentUserState.setTokenVersion(1); // Same version as in refresh token's user
 
@@ -216,7 +216,7 @@ class AuthenticationServiceTest {
     @DisplayName("updateAcessTokenWithRefreshToken should throw SessionInvalidatedException and delete token if token versions mismatch")
     void updateAccessTokenWithRefreshToken_Failure_VersionMismatch() {
         String requestRefreshToken = "valid-refresh-token";
-        User currentUserState = new User("testuser", "test@example.com", "encodedPassword");
+        User currentUserState = new User("testuser", "test@example.com", "encodedPassword","name");
         currentUserState.setId(sampleUser.getId());
         currentUserState.setTokenVersion(2);
 

@@ -2,6 +2,7 @@ package com.escritr.escritr.auth.controller;
 
 import com.escritr.escritr.auth.controller.DTOs.*;
 import com.escritr.escritr.auth.controller.mappers.UserMapper;
+import com.escritr.escritr.auth.model.UserDetailsImpl;
 import com.escritr.escritr.auth.service.AuthenticationService;
 import com.escritr.escritr.auth.service.TokenService;
 import com.escritr.escritr.common.enums.ErrorAssetEnum;
@@ -9,6 +10,7 @@ import com.escritr.escritr.common.enums.ErrorCodeEnum;
 import com.escritr.escritr.common.helpers.ErrorMessage;
 import com.escritr.escritr.exceptions.InvalidRefreshTokenException;
 import com.escritr.escritr.exceptions.SessionInvalidatedException;
+import com.escritr.escritr.user.domain.User;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.WebUtils;
 
@@ -72,7 +75,6 @@ public class AuthenticationController {
 
         AuthenticationResult authResult = this.authenticationService.authenticateAndGenerateTokens(data);
 
-        // Create HttpOnly Cookie for Refresh Token
         ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from(refreshTokenCookieName, authResult.refreshTokenValue())
                 .httpOnly(cookieHttpOnly)
                 .secure(cookieSecure)
@@ -107,8 +109,6 @@ public class AuthenticationController {
             return ResponseEntity.ok(new LoginResponseDTO(result.accessToken(),userMapper.userToUserUserLoginDTO(result.user())));
 
         } catch (InvalidRefreshTokenException | SessionInvalidatedException ex) {
-            System.err.println("Refresh token validation failed: " + ex.getMessage());
-            // Clear the cookie
             ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from(refreshTokenCookieName, "")
                     .httpOnly(cookieHttpOnly)
                     .secure(cookieSecure)
@@ -125,9 +125,6 @@ public class AuthenticationController {
                     .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
                     .body(new ErrorMessage(ex.getMessage(), ErrorAssetEnum.AUTHENTICATION,ErrorCodeEnum.INVALID_REFRESH_TOKEN));
         } catch (Exception ex) {
-            System.err.println("Error during token refresh: " + ex.getMessage());
-            //TODO: replace with more robust logging
-            ex.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorMessage("Token refresh failed.", ErrorAssetEnum.AUTHENTICATION,null));
         }
     }
@@ -185,6 +182,20 @@ public class AuthenticationController {
         response.put("available",result);
         return ResponseEntity.ok(response);
 
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorMessage("No authenticated user found.", ErrorAssetEnum.AUTHENTICATION, ErrorCodeEnum.UNAUTHORIZED));
+        }
+        User currentUser = userDetails.getUser();
+        UserLoginDTO userDto = userMapper.userToUserUserLoginDTO(currentUser);
+
+        Map<String, UserLoginDTO> response = new HashMap<>();
+        response.put("user", userDto);
+        return ResponseEntity.ok(response);
     }
 
 

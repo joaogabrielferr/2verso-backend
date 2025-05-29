@@ -1,5 +1,5 @@
 package com.escritr.escritr.auth.config;
-
+import com.escritr.escritr.auth.service.CustomOidcUserService;
 import com.escritr.escritr.auth.service.MyUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,13 +22,24 @@ public class SecurityConfig {
 
     private final MyUserDetailsService myUserDetailsService;
     private final JwtFilter jwtFilter;
-    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint; // Inject this
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomOidcUserService customOidcUserService; // Use the new OIDC service
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
 
-    public SecurityConfig(MyUserDetailsService myUserDetailsService, JwtFilter jwtFilter, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
+    public SecurityConfig(MyUserDetailsService myUserDetailsService,
+                          JwtFilter jwtFilter,
+                          CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+                          CustomOidcUserService customOidcUserService, // Inject CustomOidcUserService
+                          OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
+                          OAuth2LoginFailureHandler oAuth2LoginFailureHandler) {
         this.myUserDetailsService = myUserDetailsService;
         this.jwtFilter = jwtFilter;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
+        this.customOidcUserService = customOidcUserService; // Assign
+        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
+        this.oAuth2LoginFailureHandler = oAuth2LoginFailureHandler;
     }
 
     @Bean
@@ -38,29 +49,39 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/articles/slug/**","/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/articles","/api/articles/user/{username}").permitAll()
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/articles/slug/**",
+                                "/error",
+                                "/oauth2/**",
+                                "/login/oauth2/code/*"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/articles", "/api/articles/user/{username}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/articles/{username}").permitAll()
                         .anyRequest().authenticated()
                 )
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                        .oidcUserService(customOidcUserService) // Use oidcUserService for OIDC providers
+                        )
+                        .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler(oAuth2LoginFailureHandler)
+                )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .userDetailsService(myUserDetailsService) // Still useful for other auth mechanisms or if UserDetails are loaded elsewhere
+                .userDetailsService(myUserDetailsService)
                 .exceptionHandling(exceptions ->
-                                exceptions.authenticationEntryPoint(customAuthenticationEntryPoint) // Configure custom entry point
-                        // You might also want a .accessDeniedHandler(customAccessDeniedHandler) for 403 errors
+                        exceptions.authenticationEntryPoint(customAuthenticationEntryPoint)
                 )
                 .build();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception{
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-
 }

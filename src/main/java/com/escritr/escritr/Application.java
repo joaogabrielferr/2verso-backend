@@ -23,7 +23,10 @@ public class Application {
 
 	@PostConstruct
 	public void logActiveProfiles() {
+
 		System.out.println("Active profiles: " + Arrays.toString(env.getActiveProfiles()));
+		System.out.println("Attempting to read GOOGLE_CLIENT_ID: " + System.getenv("GOOGLE_CLIENT_ID"));
+		System.out.println("Attempting to read GOOGLE_CLIENT_SECRET: " + System.getenv("GOOGLE_CLIENT_SECRET"));
 	}
 
 

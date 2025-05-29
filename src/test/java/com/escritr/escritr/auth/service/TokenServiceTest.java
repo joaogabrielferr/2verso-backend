@@ -48,7 +48,7 @@ class TokenServiceTest {
         long refreshTokenExpDays = 7;
         ReflectionTestUtils.setField(tokenService, "refreshTokenExpirationDays", refreshTokenExpDays);
 
-        sampleUser = new User("testuser", "test@example.com", "password");
+        sampleUser = new User("testuser", "test@example.com", "password","name");
         sampleUser.setId(UUID.randomUUID());
         sampleUser.setTokenVersion(1);
     }

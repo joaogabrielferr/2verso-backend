@@ -54,7 +54,7 @@ class JwtFilterTest {
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
-        sampleUser = new User("testuser", "test@example.com", "password");
+        sampleUser = new User("testuser", "test@example.com", "password","name");
         sampleUser.setId(userId);
         sampleUser.setTokenVersion(1);
 
@@ -152,7 +152,7 @@ class JwtFilterTest {
     @Test
     @DisplayName("doFilterInternal should clear context and proceed if token version mismatches")
     void doFilterInternal_TokenVersionMismatch() throws ServletException, IOException {
-        User userWithDifferentVersion = new User("testuser", "test@example.com", "password");
+        User userWithDifferentVersion = new User("testuser", "test@example.com", "password","name");
         userWithDifferentVersion.setId(userId);
         userWithDifferentVersion.setTokenVersion(2); // User in DB has version 2
 
